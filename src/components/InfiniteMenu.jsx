@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { mat4, quat, vec2, vec3 } from 'gl-matrix';
 import './InfiniteMenu.css';
 
@@ -449,21 +449,68 @@ class ArcballControl {
     this._rotationVelocity = 0;
     this._combinedQuat = quat.create();
 
-    canvas.addEventListener('pointerdown', e => {
-      vec2.set(this.pointerPos, e.clientX, e.clientY);
+    // Unified pointer handling that works for both mouse and touch
+    const handlePointerStart = (x, y) => {
+      vec2.set(this.pointerPos, x, y);
       vec2.copy(this.previousPointerPos, this.pointerPos);
       this.isPointerDown = true;
-    });
-    canvas.addEventListener('pointerup', () => {
-      this.isPointerDown = false;
-    });
-    canvas.addEventListener('pointerleave', () => {
-      this.isPointerDown = false;
-    });
-    canvas.addEventListener('pointermove', e => {
+    };
+
+    const handlePointerMove = (x, y) => {
       if (this.isPointerDown) {
-        vec2.set(this.pointerPos, e.clientX, e.clientY);
+        vec2.set(this.pointerPos, x, y);
       }
+    };
+
+    const handlePointerEnd = () => {
+      this.isPointerDown = false;
+    };
+
+    // Mouse events
+    canvas.addEventListener('mousedown', e => {
+      handlePointerStart(e.clientX, e.clientY);
+    });
+    canvas.addEventListener('mouseup', handlePointerEnd);
+    canvas.addEventListener('mouseleave', handlePointerEnd);
+    canvas.addEventListener('mousemove', e => {
+      handlePointerMove(e.clientX, e.clientY);
+    });
+
+    // Touch events with explicit handling for mobile
+    canvas.addEventListener('touchstart', e => {
+      e.preventDefault(); // Prevent scroll
+      if (e.touches.length > 0) {
+        const touch = e.touches[0];
+        handlePointerStart(touch.clientX, touch.clientY);
+      }
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', e => {
+      e.preventDefault();
+      handlePointerEnd();
+    }, { passive: false });
+
+    canvas.addEventListener('touchcancel', e => {
+      e.preventDefault();
+      handlePointerEnd();
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', e => {
+      e.preventDefault(); // Prevent scroll while dragging
+      if (e.touches.length > 0 && this.isPointerDown) {
+        const touch = e.touches[0];
+        handlePointerMove(touch.clientX, touch.clientY);
+      }
+    }, { passive: false });
+
+    // Also keep pointer events for browsers that support them
+    canvas.addEventListener('pointerdown', e => {
+      handlePointerStart(e.clientX, e.clientY);
+    });
+    canvas.addEventListener('pointerup', handlePointerEnd);
+    canvas.addEventListener('pointerleave', handlePointerEnd);
+    canvas.addEventListener('pointermove', e => {
+      handlePointerMove(e.clientX, e.clientY);
     });
 
     canvas.style.touchAction = 'none';
@@ -576,13 +623,19 @@ class InfiniteGridMenu {
   #deltaFrames = 0;
   #frames = 0;
 
+  // Mobile detection - initially false, updated in resize()
+  isMobile = false;
+
+  // Visibility tracking for performance optimization
+  isVisible = true;
+
   camera = {
     matrix: mat4.create(),
     near: 0.1,
     far: 40,
     fov: Math.PI / 4,
     aspect: 1,
-    position: vec3.fromValues(0, 0, 3),
+    position: vec3.fromValues(0, 0, 3), // Will be updated in resize()
     up: vec3.fromValues(0, 1, 0),
     matrices: {
       view: mat4.create(),
@@ -599,13 +652,20 @@ class InfiniteGridMenu {
   constructor(canvas, items, onActiveItemChange, onMovementChange, onInit = null) {
     this.canvas = canvas;
     this.items = items || [];
-    this.onActiveItemChange = onActiveItemChange || (() => {});
-    this.onMovementChange = onMovementChange || (() => {});
+    this.onActiveItemChange = onActiveItemChange || (() => { });
+    this.onMovementChange = onMovementChange || (() => { });
     this.#init(onInit);
   }
 
   resize() {
     this.viewportSize = vec2.set(this.viewportSize || vec2.create(), this.canvas.clientWidth, this.canvas.clientHeight);
+
+    // Update mobile detection dynamically
+    this.isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
+    // Update camera position based on device
+    const targetCameraZ = this.isMobile ? 4.5 : 3;
+    this.camera.position[2] = targetCameraZ;
 
     const gl = this.gl;
     const needsResize = resizeCanvasToDisplaySize(gl.canvas);
@@ -614,9 +674,19 @@ class InfiniteGridMenu {
     }
 
     this.#updateProjectionMatrix(gl);
+    this.#updateCameraMatrix();
   }
 
   run(time = 0) {
+    // Stop if destroyed
+    if (this.destroyed) return;
+
+    // Skip rendering if not visible (performance optimization)
+    if (!this.isVisible) {
+      requestAnimationFrame(t => this.run(t));
+      return;
+    }
+
     this.#deltaTime = Math.min(32, time - this.#time);
     this.#time = time;
     this.#deltaFrames = this.#deltaTime / this.TARGET_FRAME_DURATION;
@@ -758,8 +828,9 @@ class InfiniteGridMenu {
     this.control.update(deltaTime, this.TARGET_FRAME_DURATION);
 
     let positions = this.instancePositions.map(p => vec3.transformQuat(vec3.create(), p, this.control.orientation));
-    const scale = 0.25;
-    const SCALE_INTENSITY = 0.6;
+    // Mobile: LARGER discs for better visibility
+    const scale = this.isMobile ? 0.30 : 0.25;
+    const SCALE_INTENSITY = this.isMobile ? 0.4 : 0.6;
     positions.forEach((p, ndx) => {
       const s = (Math.abs(p[2]) / this.SPHERE_RADIUS) * SCALE_INTENSITY + (1 - SCALE_INTENSITY);
       const finalScale = s * scale;
@@ -832,12 +903,16 @@ class InfiniteGridMenu {
 
   #updateProjectionMatrix(gl) {
     this.camera.aspect = gl.canvas.clientWidth / gl.canvas.clientHeight;
-    const height = this.SPHERE_RADIUS * 0.35;
+    // Use same height multiplier for both, let camera distance handle mobile
+    const height = this.SPHERE_RADIUS * 0.4;
     const distance = this.camera.position[2];
     if (this.camera.aspect > 1) {
+      // Landscape
       this.camera.fov = 2 * Math.atan(height / distance);
     } else {
-      this.camera.fov = 2 * Math.atan(height / this.camera.aspect / distance);
+      // Portrait (mobile) - limit how much we divide by aspect to prevent extreme zoom
+      const adjustedAspect = Math.max(0.6, this.camera.aspect);
+      this.camera.fov = 2 * Math.atan(height / adjustedAspect / distance);
     }
     mat4.perspective(
       this.camera.matrices.projection,
@@ -852,7 +927,8 @@ class InfiniteGridMenu {
   #onControlUpdate(deltaTime) {
     const timeScale = deltaTime / this.TARGET_FRAME_DURATION + 0.0001;
     let damping = 5 / timeScale;
-    let cameraTargetZ = 3;
+    // Base camera distance - different for mobile
+    let cameraTargetZ = this.isMobile ? 4.5 : 3;
 
     const isMoving = this.control.isPointerDown || Math.abs(this.smoothRotationVelocity) > 0.01;
 
@@ -868,7 +944,8 @@ class InfiniteGridMenu {
       const snapDirection = vec3.normalize(vec3.create(), this.#getVertexWorldPosition(nearestVertexIndex));
       this.control.snapTargetDirection = snapDirection;
     } else {
-      cameraTargetZ += this.control.rotationVelocity * 80 + 2.5;
+      // Zoom in slightly while dragging - less extreme on mobile
+      cameraTargetZ += this.control.rotationVelocity * (this.isMobile ? 30 : 80) + (this.isMobile ? 0.5 : 2.5);
       damping = 7 / timeScale;
     }
 
@@ -897,6 +974,46 @@ class InfiniteGridMenu {
     const nearestVertexPos = this.instancePositions[index];
     return vec3.transformQuat(vec3.create(), nearestVertexPos, this.control.orientation);
   }
+
+  // CRITICAL: Properly destroy WebGL resources to prevent context accumulation
+  destroy() {
+    const gl = this.gl;
+    if (!gl) return;
+
+    // Stop the animation loop
+    this.destroyed = true;
+
+    // Delete textures
+    if (this.tex) {
+      gl.deleteTexture(this.tex);
+      this.tex = null;
+    }
+
+    // Delete buffers
+    if (this.discInstances && this.discInstances.buffer) {
+      gl.deleteBuffer(this.discInstances.buffer);
+    }
+
+    // Delete VAO
+    if (this.discVAO) {
+      gl.deleteVertexArray(this.discVAO);
+      this.discVAO = null;
+    }
+
+    // Delete program
+    if (this.discProgram) {
+      gl.deleteProgram(this.discProgram);
+      this.discProgram = null;
+    }
+
+    // Lose the WebGL context to free GPU resources
+    const loseContext = gl.getExtension('WEBGL_lose_context');
+    if (loseContext) {
+      loseContext.loseContext();
+    }
+
+    this.gl = null;
+  }
 }
 
 const defaultItems = [
@@ -919,8 +1036,10 @@ const defaultItems = [
 /**
  * @param {{ items?: MenuItem[] }} props
  */
-export default function InfiniteMenu({ items = [] }) {
+function InfiniteMenuBase({ items = [] }) {
   const canvasRef = useRef(null);
+  const containerRef = useRef(null);
+  const isVisibleRef = useRef(true); // Track visibility for performance
   const [activeItem, setActiveItem] = useState(null);
   const [isMoving, setIsMoving] = useState(false);
   const [webglError, setWebglError] = useState(false);
@@ -935,10 +1054,10 @@ export default function InfiniteMenu({ items = [] }) {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
+
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    
+
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
@@ -953,7 +1072,7 @@ export default function InfiniteMenu({ items = [] }) {
         img.src = item.image;
       });
     });
-    
+
     Promise.all(imagePromises).then(() => {
       setImagesLoaded(true);
       setIsInitializing(false);
@@ -964,16 +1083,16 @@ export default function InfiniteMenu({ items = [] }) {
     const canvas = canvasRef.current;
     let sketch;
     const itemsToUse = items.length ? items : defaultItems;
-    
+
     // Wait for images to load before initializing
     if (!imagesLoaded) return;
-    
+
     if (!canvas) {
       // Canvas not found, using fallback UI
       setWebglError(true);
       return;
     }
-    
+
     // Try WebGL first, fallback to CSS if it fails
     try {
       const gl = canvas.getContext('webgl2', { antialias: true, alpha: false });
@@ -1001,15 +1120,15 @@ export default function InfiniteMenu({ items = [] }) {
     try {
       // Creating WebGL menu
       sketch = new InfiniteGridMenu(
-        canvas, 
-        itemsToUse, 
-        handleActiveItem, 
+        canvas,
+        itemsToUse,
+        handleActiveItem,
         (moving) => {
           setIsMoving(moving);
           if (!moving) {
             setIsFocusedView(true);
           }
-        }, 
+        },
         sk => {
           // WebGL menu initialized
           setActiveItem(itemsToUse[0]);
@@ -1022,7 +1141,7 @@ export default function InfiniteMenu({ items = [] }) {
       setWebglError(true);
       // Set up fallback with first item
       setActiveItem(itemsToUse[0]);
-      
+
       // Auto-rotate items for fallback
       const interval = setInterval(() => {
         setCurrentIndex(prev => {
@@ -1041,10 +1160,24 @@ export default function InfiniteMenu({ items = [] }) {
       }
     };
 
+    // PERFORMANCE: IntersectionObserver to pause WebGL when off-screen
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (sketch) {
+          sketch.isVisible = entry.isIntersecting;
+        }
+      },
+      { rootMargin: '200px' }
+    );
+    if (canvas) {
+      observer.observe(canvas);
+    }
+
     window.addEventListener('resize', handleResize);
     handleResize();
 
     return () => {
+      observer.disconnect();
       window.removeEventListener('resize', handleResize);
       if (sketch && sketch.destroy) {
         sketch.destroy();
@@ -1066,9 +1199,9 @@ export default function InfiniteMenu({ items = [] }) {
   // Fallback UI when WebGL fails
   if (webglError) {
     return (
-      <div style={{ 
-        position: 'relative', 
-        width: '100%', 
+      <div style={{
+        position: 'relative',
+        width: '100%',
         height: '100%',
         minHeight: '400px',
         background: 'radial-gradient(circle at center, rgba(32, 128, 255, 0.1) 0%, rgba(0, 0, 0, 0.2) 40%, rgba(0, 0, 0, 0.8) 100%)',
@@ -1080,10 +1213,10 @@ export default function InfiniteMenu({ items = [] }) {
         overflow: 'hidden'
       }}>
         {/* Circular layout fallback */}
-        <div style={{ 
-          position: 'absolute', 
-          top: '50%', 
-          left: '50%', 
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
           transform: 'translate(-50%, -50%)',
           width: 'min(400px, 90vw)',
           height: 'min(400px, 90vw)',
@@ -1116,12 +1249,12 @@ export default function InfiniteMenu({ items = [] }) {
                   width: isMobile ? '50px' : '70px',
                   height: isMobile ? '50px' : '70px',
                   borderRadius: '12px',
-                  background: isActive 
-                    ? 'rgba(82, 39, 255, 0.9)' 
+                  background: isActive
+                    ? 'rgba(82, 39, 255, 0.9)'
                     : 'rgba(255, 255, 255, 0.1)',
                   backdropFilter: 'blur(10px)',
-                  border: isActive 
-                    ? '2px solid rgba(82, 39, 255, 1)' 
+                  border: isActive
+                    ? '2px solid rgba(82, 39, 255, 1)'
                     : '1px solid rgba(255, 255, 255, 0.2)',
                   cursor: 'pointer',
                   display: 'flex',
@@ -1131,7 +1264,7 @@ export default function InfiniteMenu({ items = [] }) {
                   transition: 'all 0.3s ease',
                 }}
               >
-                <img 
+                <img
                   src={item.image}
                   alt={item.title}
                   style={{
@@ -1188,7 +1321,7 @@ export default function InfiniteMenu({ items = [] }) {
             }}>
               {activeItem.description}
             </div>
-            <button 
+            <button
               onClick={handleButtonClick}
               style={{
                 background: 'linear-gradient(45deg, #5227ff, #7c4dff)',
@@ -1220,34 +1353,48 @@ export default function InfiniteMenu({ items = [] }) {
   }
 
   return (
-    <div style={{ 
-      position: 'relative', 
-      width: '100%', 
-      height: '100%',
-      minHeight: '400px',
-      background: 'transparent',
-      overflow: 'hidden',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      opacity: imagesLoaded ? 1 : 0.8,
-      transition: 'opacity 0.4s ease-in-out'
-    }}>
-      <canvas 
-        id="infinite-grid-menu-canvas" 
-        ref={canvasRef} 
-        style={{
-          width: '100%',
-          height: '100%',
-          background: 'transparent',
-          display: webglError ? 'none' : 'block',
-          willChange: 'transform'
-        }}
-      />
+    <div
+      data-lenis-prevent
+      style={{
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        minHeight: '400px',
+        background: 'transparent',
+        overflow: 'visible',
+        touchAction: 'none',
+        WebkitUserSelect: 'none',
+        userSelect: 'none'
+      }}>
+      {/* Canvas container with explicit dimensions */}
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100%',
+        height: '100%'
+      }}>
+        <canvas
+          id="infinite-grid-menu-canvas"
+          ref={canvasRef}
+          data-lenis-prevent
+          style={{
+            display: webglError ? 'none' : 'block',
+            width: '100%',
+            height: '100%',
+            background: 'transparent',
+            willChange: 'transform',
+            touchAction: 'none',
+            WebkitTapHighlightColor: 'transparent'
+          }}
+        />
+      </div>
 
       {/* WebGL overlay text - show when not moving and has active item */}
       {!webglError && activeItem && (
-        <h2 
+        <h2
           className={`face-title ${!isMoving ? 'active' : 'inactive'}`}
           style={{
             position: 'absolute',
@@ -1257,7 +1404,7 @@ export default function InfiniteMenu({ items = [] }) {
             fontSize: isMobile ? 'clamp(1.2rem, 4vw, 1.6rem)' : 'clamp(1.5rem, 3.5vw, 2.8rem)',
             fontWeight: '700',
             color: '#fff',
-            zIndex: 1000,
+            zIndex: 200,
             pointerEvents: 'none',
             maxWidth: isMobile ? 'calc(100vw - 2rem)' : 'clamp(160px, 20vw, 300px)',
             lineHeight: isMobile ? '1.2' : '1.1',
@@ -1272,35 +1419,42 @@ export default function InfiniteMenu({ items = [] }) {
         </h2>
       )}
 
-
       {/* WebGL description text */}
       {!webglError && activeItem && (
-        <div 
+        <div
           className={`face-description ${!isMoving ? 'active' : 'inactive'}`}
           style={{
             position: 'absolute',
-            left: isMobile ? '1rem' : 'auto',
-            right: isMobile ? '1rem' : 'clamp(1rem, 4vw, 3rem)',
-            bottom: isMobile ? '3rem' : 'clamp(2rem, 8vh, 6rem)',
-            fontSize: isMobile ? 'clamp(0.75rem, 3vw, 0.9rem)' : 'clamp(0.7rem, 1.2vw, 0.95rem)',
+            left: isMobile ? '0.75rem' : 'auto',
+            right: isMobile ? '0.75rem' : 'clamp(1rem, 4vw, 3rem)',
+            bottom: isMobile ? '20px' : 'clamp(2rem, 8vh, 6rem)',
+            top: isMobile ? 'auto' : 'auto',
+            fontSize: isMobile ? '0.85rem' : 'clamp(0.7rem, 1.2vw, 0.95rem)',
             color: '#fff',
-            zIndex: 1000,
-            maxWidth: isMobile ? 'calc(100vw - 2rem)' : 'clamp(200px, 25vw, 350px)',
-            lineHeight: '1.4',
+            zIndex: 200,
+            maxWidth: isMobile ? 'calc(100vw - 1.5rem)' : 'clamp(200px, 25vw, 350px)',
+            lineHeight: '1.5',
             pointerEvents: 'none',
             textShadow: '0 2px 8px rgba(0,0,0,0.8)',
             opacity: !isMoving ? 1 : 0,
             transition: 'opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
-            padding: isMobile ? '0.75rem' : 'clamp(0.5rem, 1vw, 1rem)',
-            marginTop: isMobile ? '250px' : '0',
-            background: 'rgba(0, 0, 0, 0.6)',
-            borderRadius: '8px',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            maxHeight: isMobile ? '80px' : 'clamp(100px, 15vh, 150px)',
+            padding: isMobile ? '0.875rem 1rem' : 'clamp(0.5rem, 1vw, 1rem)',
+            background: isMobile
+              ? 'linear-gradient(135deg, rgba(0, 0, 0, 0.85) 0%, rgba(20, 20, 30, 0.9) 100%)'
+              : 'rgba(0, 0, 0, 0.6)',
+            borderRadius: isMobile ? '12px' : '8px',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            border: isMobile
+              ? '1px solid rgba(159, 107, 255, 0.2)'
+              : '1px solid rgba(255, 255, 255, 0.1)',
+            boxShadow: isMobile
+              ? '0 4px 20px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
+              : 'none',
+            maxHeight: isMobile ? '100px' : 'clamp(100px, 15vh, 150px)',
             overflow: 'hidden',
             display: '-webkit-box',
-            WebkitLineClamp: isMobile ? 3 : 5,
+            WebkitLineClamp: isMobile ? 4 : 5,
             WebkitBoxOrient: 'vertical',
             wordWrap: 'break-word',
             overflowWrap: 'break-word'
@@ -1310,19 +1464,21 @@ export default function InfiniteMenu({ items = [] }) {
         </div>
       )}
 
-      <div 
-        onClick={handleButtonClick} 
+      {/* Action button - positioned at bottom on mobile */}
+      <div
+        onClick={handleButtonClick}
         className={`action-button ${!isMoving && activeItem ? 'visible' : 'hidden'}`}
         style={{
           position: 'absolute',
           left: '50%',
-          top: '50%',
-          transform: !isMoving && activeItem 
-            ? (isMobile ? 'translateX(-50%) translateY(-50%)' : 'translateX(-50%) translateY(calc(18vh + 10px))') 
-            : (isMobile ? 'translateX(-50%) translateY(calc(-50% + 80px))' : 'translateX(-50%) translateY(calc(18vh + 80px))'),
-          zIndex: 1001,
-          width: 'clamp(45px, 5vw, 60px)',
-          height: 'clamp(45px, 5vw, 60px)',
+          top: isMobile ? 'auto' : '50%',
+          bottom: isMobile ? '20px' : 'auto',
+          transform: !isMoving && activeItem
+            ? (isMobile ? 'translateX(-50%)' : 'translateX(-50%) translateY(calc(18vh + 10px))')
+            : (isMobile ? 'translateX(-50%) translateY(20px)' : 'translateX(-50%) translateY(calc(18vh + 80px))'),
+          zIndex: 300,
+          width: isMobile ? '50px' : 'clamp(45px, 5vw, 60px)',
+          height: isMobile ? '50px' : 'clamp(45px, 5vw, 60px)',
           background: 'linear-gradient(135deg, rgba(159, 107, 255, 0.9), rgba(35, 209, 248, 0.9))',
           border: '2px solid rgba(255, 255, 255, 0.3)',
           borderRadius: '50%',
@@ -1337,19 +1493,19 @@ export default function InfiniteMenu({ items = [] }) {
         }}
         onMouseEnter={(e) => {
           if (activeItem) {
-            e.target.style.transform = isMobile ? 'translateX(-50%) translateY(-50%) scale(1.15)' : 'translateX(-50%) translateY(calc(18vh + 10px)) scale(1.15)';
+            e.target.style.transform = isMobile ? 'translateX(-50%) scale(1.15)' : 'translateX(-50%) translateY(calc(18vh + 10px)) scale(1.15)';
             e.target.style.boxShadow = '0 12px 48px rgba(159, 107, 255, 0.6), 0 0 30px rgba(255, 255, 255, 0.2)';
           }
         }}
         onMouseLeave={(e) => {
           if (activeItem) {
-            e.target.style.transform = isMobile ? 'translateX(-50%) translateY(-50%) scale(1)' : 'translateX(-50%) translateY(calc(18vh + 10px)) scale(1)';
+            e.target.style.transform = isMobile ? 'translateX(-50%) scale(1)' : 'translateX(-50%) translateY(calc(18vh + 10px)) scale(1)';
             e.target.style.boxShadow = '0 8px 32px rgba(159, 107, 255, 0.4), 0 0 20px rgba(255, 255, 255, 0.1)';
           }
         }}
       >
-        <p className="action-button-icon" style={{ 
-          fontSize: 'clamp(16px, 2.5vw, 22px)', 
+        <p className="action-button-icon" style={{
+          fontSize: 'clamp(16px, 2.5vw, 22px)',
           margin: 0,
           color: '#fff',
           fontWeight: 'bold',
@@ -1360,3 +1516,6 @@ export default function InfiniteMenu({ items = [] }) {
     </div>
   );
 }
+
+// Wrap in React.memo to prevent re-renders from parent state changes
+export default React.memo(InfiniteMenuBase);

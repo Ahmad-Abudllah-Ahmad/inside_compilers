@@ -96,7 +96,7 @@ export default function ChatBot() {
   const extractUserData = (text: string) => {
     const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g;
     const emails = text.match(emailRegex);
-    
+
     if (emails && emails[0] && !userData.email) {
       setUserData(prev => ({ ...prev, email: emails[0] }));
     }
@@ -122,7 +122,7 @@ export default function ChatBot() {
 
       // Here you would send to your contact form endpoint
       console.log('Sending lead data:', formData);
-      
+
       // For now, just show success message
       const successMessage: Message = {
         id: Date.now().toString(),
@@ -130,14 +130,14 @@ export default function ChatBot() {
         isUser: false,
         timestamp: new Date()
       };
-      
+
       setMessages(prev => [...prev, successMessage]);
     }
   };
 
   const callGeminiAPI = async (userMessage: string) => {
     try {
-      const conversationHistory = messages.map(msg => 
+      const conversationHistory = messages.map(msg =>
         `${msg.isUser ? 'User' : 'IC Assist'}: ${msg.text}`
       ).join('\n');
 
@@ -202,7 +202,7 @@ Please respond as IC Assist, maintaining the professional persona and rememberin
 
     try {
       const botResponse = await callGeminiAPI(inputValue);
-      
+
       const botMessage: Message = {
         id: (Date.now() + 1).toString(),
         text: botResponse,
@@ -245,7 +245,7 @@ Please respond as IC Assist, maintaining the professional persona and rememberin
         <button
           onClick={() => setIsOpen(true)}
           className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[9999] bg-cyan-400 hover:bg-cyan-300 text-black p-3 sm:p-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-110 border-2 border-white/20"
-          style={{ 
+          style={{
             backgroundColor: '#23D1F8',
             boxShadow: '0 10px 25px rgba(35, 209, 248, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1)'
           }}
@@ -266,9 +266,10 @@ Please respond as IC Assist, maintaining the professional persona and rememberin
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="hover:bg-black/10 p-1 rounded-full transition-colors"
+              className="bg-white/20 hover:bg-white/40 p-2 rounded-full transition-colors text-black"
+              aria-label="Close chat"
             >
-              <X size={20} />
+              <X size={24} />
             </button>
           </div>
 
@@ -280,16 +281,15 @@ Please respond as IC Assist, maintaining the professional persona and rememberin
                 className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] p-3 rounded-lg ${
-                    message.isUser
+                  className={`max-w-[80%] p-3 rounded-lg ${message.isUser
                       ? 'bg-accent-cyan text-black'
                       : 'bg-surface text-white'
-                  }`}
+                    }`}
                 >
-                  <div 
+                  <div
                     className="text-sm whitespace-pre-wrap"
-                    dangerouslySetInnerHTML={{ 
-                      __html: message.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
+                    dangerouslySetInnerHTML={{
+                      __html: message.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                     }}
                   />
                 </div>

@@ -2,7 +2,7 @@
 
 /* eslint-disable react/no-unknown-property */
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { forwardRef, useRef, useMemo, useLayoutEffect } from 'react';
+import { forwardRef, useRef, useMemo, useLayoutEffect, useState, useEffect } from 'react';
 import { Color } from 'three';
 
 const hexToNormalizedRGB = hex => {
@@ -71,8 +71,9 @@ void main() {
 }
 `;
 
-const SilkPlane = forwardRef(function SilkPlane({ uniforms }, ref) {
+const SilkPlane = forwardRef(function SilkPlane({ uniforms, isMobile }, ref) {
   const { viewport } = useThree();
+  const frameCount = useRef(0);
 
   useLayoutEffect(() => {
     if (ref.current) {
@@ -81,6 +82,10 @@ const SilkPlane = forwardRef(function SilkPlane({ uniforms }, ref) {
   }, [ref, viewport]);
 
   useFrame((_, delta) => {
+    // Subtle frame throttling on mobile - skip every 3rd frame (still looks smooth at ~40fps)
+    frameCount.current++;
+    if (isMobile && frameCount.current % 3 === 0) return;
+
     ref.current.material.uniforms.uTime.value += 0.1 * delta;
   });
 
@@ -95,7 +100,16 @@ SilkPlane.displayName = 'SilkPlane';
 
 const Silk = ({ speed = 5, scale = 1, color = '#7B7481', noiseIntensity = 1.5, rotation = 0 }) => {
   const meshRef = useRef();
+  const [isMobile, setIsMobile] = useState(false);
 
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Keep same visual properties, uniforms unchanged for design consistency
   const uniforms = useMemo(
     () => ({
       uSpeed: { value: speed },
@@ -109,17 +123,23 @@ const Silk = ({ speed = 5, scale = 1, color = '#7B7481', noiseIntensity = 1.5, r
   );
 
   return (
-    <Canvas 
-      dpr={[1, 2]} 
+    <Canvas
+      dpr={isMobile ? 1 : (typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 1.5) : 1)} // Capped DPR for performance
       frameloop="always"
-      style={{ 
-        width: '100%', 
+      style={{
+        width: '100%',
         height: '100%',
         background: 'transparent'
       }}
-      gl={{ alpha: true, antialias: true }}
+      gl={{
+        alpha: true,
+        antialias: false, // Disabled for performance, not noticeable on this effect
+        powerPreference: 'high-performance',
+        preserveDrawingBuffer: false,
+        failIfMajorPerformanceCaveat: false
+      }}
     >
-      <SilkPlane ref={meshRef} uniforms={uniforms} />
+      <SilkPlane ref={meshRef} uniforms={uniforms} isMobile={isMobile} />
     </Canvas>
   );
 };

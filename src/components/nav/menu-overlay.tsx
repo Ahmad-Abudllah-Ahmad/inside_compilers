@@ -13,25 +13,25 @@ interface MenuOverlayProps {
 }
 
 const menuItems = [
-  { 
-    link: '#services', 
-    text: 'Services', 
-    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=400&fit=crop&crop=center' 
+  {
+    link: '#services',
+    text: 'Services',
+    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=400&fit=crop&crop=center'
   },
-  { 
-    link: '#projects', 
-    text: 'Projects', 
-    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop&crop=center' 
+  {
+    link: '#projects',
+    text: 'Projects',
+    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop&crop=center'
   },
-  { 
-    link: '#about', 
-    text: 'About', 
-    image: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600&h=400&fit=crop&crop=center' 
+  {
+    link: '#about',
+    text: 'About',
+    image: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600&h=400&fit=crop&crop=center'
   },
-  { 
-    link: '#contact', 
-    text: 'Contact', 
-    image: 'https://images.unsplash.com/photo-1423666639041-f56000c27a9a?w=600&h=400&fit=crop&crop=center' 
+  {
+    link: '#contact',
+    text: 'Contact',
+    image: 'https://images.unsplash.com/photo-1423666639041-f56000c27a9a?w=600&h=400&fit=crop&crop=center'
   },
 ];
 
@@ -48,12 +48,12 @@ export function MenuOverlay({ isOpen, onClose, onNavClick }: MenuOverlayProps) {
     if (isOpen) {
       // Prevent body scroll
       document.body.style.overflow = 'hidden';
-      
+
       // GSAP entrance animation
       const tl = gsap.timeline();
-      
+
       // Background fade in
-      tl.fromTo(overlay, 
+      tl.fromTo(overlay,
         { opacity: 0 },
         { opacity: 1, duration: 0.3, ease: 'power2.out' }
       );
@@ -62,12 +62,12 @@ export function MenuOverlay({ isOpen, onClose, onNavClick }: MenuOverlayProps) {
       const items = menu.querySelectorAll('.menu-item');
       tl.fromTo(items,
         { y: 100, opacity: 0 },
-        { 
-          y: 0, 
-          opacity: 1, 
-          duration: 0.6, 
-          ease: 'back.out(1.7)', 
-          stagger: 0.1 
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.6,
+          ease: 'back.out(1.7)',
+          stagger: 0.1
         },
         '-=0.2'
       );
@@ -93,9 +93,9 @@ export function MenuOverlay({ isOpen, onClose, onNavClick }: MenuOverlayProps) {
 
   const handleItemClick = (target: string) => {
     // Use Lenis smooth scroll
-    scrollTo(target, { 
-      duration: 1.5, 
-      easing: (t: number) => 1 - Math.pow(1 - t, 3) 
+    scrollTo(target, {
+      duration: 1.5,
+      easing: (t: number) => 1 - Math.pow(1 - t, 3)
     });
     onNavClick(target);
     onClose();
@@ -114,7 +114,7 @@ export function MenuOverlay({ isOpen, onClose, onNavClick }: MenuOverlayProps) {
           transition={{ duration: 0.3 }}
           onClick={onClose}
         >
-          <div 
+          <div
             ref={menuRef}
             className="min-h-screen relative z-[100000]"
             style={{ zIndex: 100000 }}
@@ -125,7 +125,7 @@ export function MenuOverlay({ isOpen, onClose, onNavClick }: MenuOverlayProps) {
             </div>
 
             {/* Contact info */}
-            <motion.div 
+            <motion.div
               className="absolute bottom-8 left-8 text-left space-y-2 opacity-90 z-[100002] pointer-events-auto"
               style={{ zIndex: 100002 }}
               initial={{ opacity: 0, y: 20 }}
@@ -133,7 +133,7 @@ export function MenuOverlay({ isOpen, onClose, onNavClick }: MenuOverlayProps) {
               transition={{ delay: 0.5, duration: 0.6 }}
             >
               <p className="text-white/60 text-sm">Get in touch</p>
-              <p className="text-accent-lime text-lg font-semibold">hello@insidecompiler.com</p>
+              <p className="text-accent-lime text-lg font-semibold">inside.compiler@gmail.com</p>
             </motion.div>
 
             {/* Close button */}
@@ -146,7 +146,7 @@ export function MenuOverlay({ isOpen, onClose, onNavClick }: MenuOverlayProps) {
               whileTap={{ scale: 0.9 }}
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </motion.button>
           </div>

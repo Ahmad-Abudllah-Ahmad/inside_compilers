@@ -168,18 +168,29 @@
     --spacing-grid-gap: clamp(0.75rem, 2vw, 1.5rem);
   }
 
-  /* Disable complex animations on mobile */
-  .no-mobile-animation {
-    transform: none !important;
-    filter: none !important;
-    animation: none !important;
+  /* GPU acceleration hints for smoother animations */
+  .transform-gpu,
+  [class*="animate"],
+  [class*="transition"] {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    perspective: 1000px;
+  }
+
+  /* Reduce noise overlay intensity for performance (subtle change) */
+  body::before {
+    opacity: 0.03 !important;
   }
 }
 
 /* Touch Device Optimizations */
 @media (hover: none) and (pointer: coarse) {
+
   /* Increase touch targets */
-  button, a, [role="button"] {
+  button,
+  a,
+  [role="button"] {
     min-height: 44px;
     min-width: 44px;
   }
@@ -234,16 +245,47 @@ body::before {
 }
 
 @keyframes noise {
-  0%, 100% { transform: translate(0, 0) }
-  10% { transform: translate(-5%, -5%) }
-  20% { transform: translate(-10%, 5%) }
-  30% { transform: translate(5%, -10%) }
-  40% { transform: translate(-5%, 15%) }
-  50% { transform: translate(-10%, 5%) }
-  60% { transform: translate(15%, 0%) }
-  70% { transform: translate(0%, 10%) }
-  80% { transform: translate(-15%, 0%) }
-  90% { transform: translate(10%, 5%) }
+
+  0%,
+  100% {
+    transform: translate(0, 0)
+  }
+
+  10% {
+    transform: translate(-5%, -5%)
+  }
+
+  20% {
+    transform: translate(-10%, 5%)
+  }
+
+  30% {
+    transform: translate(5%, -10%)
+  }
+
+  40% {
+    transform: translate(-5%, 15%)
+  }
+
+  50% {
+    transform: translate(-10%, 5%)
+  }
+
+  60% {
+    transform: translate(15%, 0%)
+  }
+
+  70% {
+    transform: translate(0%, 10%)
+  }
+
+  80% {
+    transform: translate(-15%, 0%)
+  }
+
+  90% {
+    transform: translate(10%, 5%)
+  }
 }
 
 /* === Utility Classes === */
@@ -266,7 +308,8 @@ body::before {
 }
 
 /* === Smooth Scrolling Reset for Lenis === */
-html.lenis, html.lenis body {
+html.lenis,
+html.lenis body {
   height: auto;
 }
 
@@ -288,6 +331,7 @@ html.lenis, html.lenis body {
 
 /* === Reduced Motion Support === */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -377,7 +421,23 @@ html.lenis, html.lenis body {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Gradient shift animation for CTA buttons */
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
   }
 }

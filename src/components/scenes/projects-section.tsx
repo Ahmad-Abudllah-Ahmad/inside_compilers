@@ -1,29 +1,34 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import type { Project } from '@/types';
 import InfiniteMenu from '../InfiniteMenu';
+import { GridScan } from '../ui/GridScan';
+
+// Dynamic import for GhostCursor to avoid SSR issues with Three.js
+const GhostCursor = dynamic(() => import('../ui/GhostCursor'), { ssr: false });
 
 const categories = [
-  { 
-    name: 'All', 
-    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=400&fit=crop&crop=center' 
+  {
+    name: 'All',
+    image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&h=400&fit=crop&crop=center'
   },
-  { 
-    name: 'Web Development', 
-    image: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=600&h=400&fit=crop&crop=center' 
+  {
+    name: 'Web Development',
+    image: 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=600&h=400&fit=crop&crop=center'
   },
-  { 
-    name: 'Automation', 
-    image: 'https://images.unsplash.com/photo-1518186285589-2f7649de83e0?w=600&h=400&fit=crop&crop=center' 
+  {
+    name: 'Automation',
+    image: 'https://images.unsplash.com/photo-1518186285589-2f7649de83e0?w=600&h=400&fit=crop&crop=center'
   },
-  { 
-    name: 'AI Integration', 
-    image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600&h=400&fit=crop&crop=center' 
+  {
+    name: 'AI Integration',
+    image: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=600&h=400&fit=crop&crop=center'
   },
-  { 
-    name: 'E-commerce', 
-    image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=400&fit=crop&crop=center' 
+  {
+    name: 'E-commerce',
+    image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=400&fit=crop&crop=center'
   },
 ];
 
@@ -150,12 +155,16 @@ export default function ProjectsSection() {
   const gridRef = useRef<HTMLDivElement>(null);
   const [activeCategory, setActiveCategory] = useState('All');
   const [filteredProjects, setFilteredProjects] = useState(projects);
+  const [isMobile, setIsMobile] = useState(false);
 
+  // Detect mobile
   useEffect(() => {
-    // Disable animations to prevent positioning issues
-    return () => {
-      // Cleanup any potential tweens
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
     };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   useEffect(() => {
@@ -166,121 +175,193 @@ export default function ProjectsSection() {
     }
   }, [activeCategory]);
 
-  const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
-    (category: string) => {
-      setActiveCategory(category);
-    };
-  };
-
   return (
-    <section 
+    <section
       id="projects"
       ref={sectionRef}
-      className="h-screen overflow-hidden relative"
+      className="relative bg-black"
+      style={{
+        // Use min-height with mobile-safe viewport units
+        minHeight: isMobile ? '100svh' : '100vh',
+        // Ensure section doesn't get clipped
+        overflow: 'visible',
+        WebkitTapHighlightColor: 'transparent'
+      }}
     >
-      {/* Scrollable container within the section */}
-      <div 
-        className="h-full overflow-y-auto overflow-x-hidden scrollbar-hide"
-        style={{ 
-          scrollBehavior: 'smooth',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none'
+      {/* Main content container */}
+      <div
+        className="flex flex-col items-center justify-start py-8 md:py-16 select-none"
+        style={{
+          minHeight: 'inherit'
         }}
       >
-        {/* Header content with integrated InfiniteMenu */}
-        <div className="min-h-screen flex flex-col items-center justify-center py-16">
-          <div className="w-full flex flex-col items-center justify-center text-center px-4 sm:px-6 lg:px-8">
-            <h2 
-              ref={titleRef}
-              className="text-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-4 sm:mb-6 text-center"
-            >
-              <span className="astloch-regular">F</span>eatured <span className="text-accent-lime"><span className="astloch-regular">P</span>rojects</span>
-            </h2>
+        {/* Header with Ghost Cursor Background - CENTERED */}
+        <div className="w-full px-4 sm:px-6 lg:px-8 mb-4 md:mb-8 relative flex flex-col items-center justify-center" style={{ height: isMobile ? '200px' : '280px' }}>
+          {/* Ghost Cursor effect - smoky trail following mouse */}
+          {/* Ghost Cursor effect - smoky trail following mouse */}
+          <GhostCursor
+            className=""
+            style={{}}
+            color="#a29bfe"
+            brightness={isMobile ? 1.8 : 2.2}
+            edgeIntensity={0}
+            trailLength={isMobile ? 20 : 40}
+            inertia={0.6}
+            grainIntensity={0.03}
+            bloomStrength={isMobile ? 0.8 : 1.5}
+            bloomRadius={isMobile ? 0.4 : 0.6}
+            bloomThreshold={0.02}
+            fadeDelayMs={800}
+            fadeDurationMs={1200}
+            zIndex={0}
+            mixBlendMode="screen"
+            targetPixels={undefined}
+          />
+          <style dangerouslySetInnerHTML={{
+            __html: `
+            @keyframes ghostPulse {
+              0%, 100% { opacity: 0.8; transform: translate(-50%, -50%) scale(1); }
+              50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+            }
+          `}} />
 
-            <p className="text-sm sm:text-base md:text-lg text-text-secondary mb-6 sm:mb-8 max-w-2xl text-center">
-              Discover our portfolio of successful projects that showcase our expertise in 
-              web development, automation, and AI integration.
-            </p>
-            
-            <p className="text-sm text-text-secondary mb-4">Let&apos;s explore what we&apos;ve built</p>
-            <p className="text-xs sm:text-sm text-text-secondary/70 mb-6 text-center">
-              Scroll down to see projects spread from center one by one
-            </p>
+          <h2
+            ref={titleRef}
+            className="text-display text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-3 md:mb-6 text-center relative z-10 text-black transition-colors duration-300"
+          >
+            <span className="astloch-regular">F</span>eatured <span className="text-black"><span className="astloch-regular">P</span>rojects</span>
+          </h2>
 
-            {/* Interactive Projects Menu integrated here */}
-            <div className="relative mt-8 w-full" 
-                 style={{ 
-                   height: '100vh',
-                   minHeight: '600px',
-                   background: `
-                     radial-gradient(circle at 20% 20%, rgba(159, 107, 255, 0.15) 0%, transparent 40%),
-                     radial-gradient(circle at 80% 20%, rgba(35, 209, 248, 0.15) 0%, transparent 40%),
-                     radial-gradient(circle at 20% 80%, rgba(155, 255, 77, 0.15) 0%, transparent 40%),
-                     radial-gradient(circle at 80% 80%, rgba(255, 107, 159, 0.15) 0%, transparent 40%),
-                     linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.9) 100%)
-                   `,
-                   boxShadow: `
-                     0 0 100px rgba(159, 107, 255, 0.1),
-                     inset 0 0 100px rgba(0, 0, 0, 0.2)
-                   `
-                 }}
-            >
-              {/* Desktop view */}
-              <div className="hidden md:block absolute inset-0"
-                   style={{
-                     width: '100vw',
-                     marginLeft: 'calc(-50vw + 50%)',
-                     height: '100%',
-                     zIndex: 10,
-                     willChange: 'transform',
-                     backfaceVisibility: 'hidden'
-                   }}>
-                <InfiniteMenu items={filteredProjects.map(project => ({
-                  image: project.image,
-                  link: (project.link || `#project-${project.id}`),
-                  title: project.title,
-                  description: project.description || project.category
-                }))} />
-              </div>
-              
-              {/* Mobile view */}
-              <div className="md:hidden absolute inset-0 p-4 flex items-center justify-center"
-                   style={{
-                     height: '100%',
-                     zIndex: 10,
-                     position: 'absolute',
-                     width: '100%',
-                     left: 0,
-                     top: 0,
-                     transform: 'none',
-                     willChange: 'transform',
-                     backfaceVisibility: 'hidden'
-                   }}>
-                <InfiniteMenu items={filteredProjects.map(project => ({
-                  image: project.image,
-                  link: (project.link || `#project-${project.id}`),
-                  title: project.title,
-                  description: project.description || project.category
-                }))} />
-              </div>
-            </div>
-          </div>
+          <p className="text-sm sm:text-base md:text-lg text-black mb-4 md:mb-6 max-w-2xl mx-auto text-center relative z-10">
+            Discover our portfolio of successful projects that showcase our expertise in
+            web development, automation, and AI integration.
+          </p>
+
+          <p className="text-xs sm:text-sm text-black text-center relative z-10">
+            {isMobile ? 'Swipe on the sphere to explore projects' : 'Drag to rotate • Click to view project'}
+          </p>
         </div>
 
-        {/* Call to Action */}
-        <div className="h-screen flex items-center justify-center">
-          <div className="text-center px-4">
-            <h3 className="text-xl sm:text-2xl md:text-3xl font-bold mb-4">Ready to Start Your Project?</h3>
-            <p className="text-sm sm:text-base text-text-secondary mb-8 max-w-2xl mx-auto">
-              Let&apos;s collaborate to bring your vision to life with our cutting-edge development expertise.
-            </p>
-            
-            <button
-              className="group relative px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base bg-gradient-to-r from-accent-cyan to-accent-purple text-background font-semibold rounded-lg overflow-hidden transition-all duration-300 hover:scale-105 glow-cyan"
+        {/* Combined Interactive Menu & CTA Section with Shared GridScan */}
+        <div className="relative w-full overflow-hidden" style={{ willChange: 'auto', contain: 'layout style paint' }}>
+          {/* Shared Grid Background */}
+          <div className="absolute inset-0 z-0">
+            <GridScan
+              sensitivity={0.55}
+              lineThickness={1}
+              linesColor="#392e4e"
+              gridScale={0.1}
+              scanColor="#FF9FFC"
+              scanOpacity={0.4}
+              enablePost={!isMobile} // Performance optimization: Disable post-processing on mobile
+              bloomIntensity={0.6}
+              chromaticAberration={0.002}
+              noiseIntensity={0.01}
+              className="absolute inset-0"
+              style={{ width: '100%', height: '100%' }}
+            />
+          </div>
+
+          {/* Interactive Projects Menu */}
+          <div
+            className="relative w-full z-10"
+            data-lenis-prevent
+            style={{
+              // Use FIXED pixel height to prevent collapse during scroll
+              height: isMobile ? '500px' : '650px',
+              minHeight: isMobile ? '450px' : '500px',
+              // Removed manual gradient - using GridBeam
+              background: 'transparent',
+              // Prevent touch from propagating to page scroll while interacting
+              touchAction: 'none'
+            }}
+          >
+            {/* Full-width container for the sphere */}
+            <div
+              className="absolute inset-0"
+              data-lenis-prevent
+              style={{
+                width: '100%',
+                height: '100%',
+                zIndex: 10
+              }}
             >
-              <span className="relative z-10">Discuss Your Project</span>
-              <div className="absolute inset-0 bg-gradient-to-r from-accent-purple to-accent-lime opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            </button>
+              <InfiniteMenu items={filteredProjects.map(project => ({
+                image: project.image,
+                link: (project.link || `#project-${project.id}`),
+                title: project.title,
+                description: project.description || project.category
+              }))} />
+            </div>
+          </div>
+
+          {/* Call to Action - Grid Scan Enhanced */}
+          <div className="w-full relative z-10 flex flex-col items-center justify-center py-20 px-4" style={{ contain: 'layout style' }}>
+            {/* GridScan Overlay/Extensions if needed (removed manual beam) */}
+            <div className="relative z-10 w-full max-w-2xl mx-auto text-center">
+              {/* Gradient heading */}
+              <h3
+                className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6"
+                style={{
+                  background: 'linear-gradient(135deg, #ffffff 0%, #23D1F8 50%, #9F6BFF 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text',
+                  lineHeight: '1.2'
+                }}
+              >
+                Ready to Start Your Project?
+              </h3>
+
+              <p className="text-lg sm:text-xl text-text-secondary mb-10 max-w-xl mx-auto leading-relaxed">
+                Let&apos;s collaborate to bring your vision to life with our cutting-edge development expertise.
+              </p>
+
+              {/* Enhanced CTA button */}
+              <button
+                className="group relative overflow-hidden transition-all duration-300 active:scale-95 inline-flex items-center justify-center"
+                style={{
+                  padding: '1rem 2.5rem',
+                  fontSize: '1.125rem',
+                  fontWeight: '600',
+                  background: 'linear-gradient(135deg, #23D1F8 0%, #9F6BFF 50%, #FF6B9F 100%)',
+                  backgroundSize: '200% 200%',
+                  animation: 'gradientShift 3s ease infinite',
+                  borderRadius: '50px',
+                  border: 'none',
+                  color: '#0a0a0a',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 20px rgba(35, 209, 248, 0.4), 0 0 40px rgba(159, 107, 255, 0.2)',
+                  minWidth: '220px'
+                }}
+                onClick={() => {
+                  const contactSection = document.getElementById('contact');
+                  if (contactSection) {
+                    contactSection.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-3px)';
+                  e.currentTarget.style.boxShadow = '0 8px 30px rgba(35, 209, 248, 0.5), 0 0 60px rgba(159, 107, 255, 0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 20px rgba(35, 209, 248, 0.4), 0 0 40px rgba(159, 107, 255, 0.2)';
+                }}
+              >
+                <span className="relative z-10 flex items-center gap-2">
+                  Discuss Your Project
+                  <svg
+                    className="w-5 h-5 transition-transform group-hover:translate-x-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -100,20 +100,20 @@ export default function ServicesSection() {
       cards.forEach((card, index) => {
         const leftText = card.querySelector('.service-title-left');
         const rightText = card.querySelector('.service-title-right');
-        
+
         // Ensure we found the text elements
         if (!leftText || !rightText) {
           console.warn(`Text elements not found for card ${index}`);
           return;
         }
-        
+
         // Set initial positions - alternate directions for each card
         const isEvenCard = index % 2 === 0;
-        
+
         // Responsive positioning based on screen width
         const isMobile = window.innerWidth < 768;
         const moveDistance = isMobile ? 400 : 800;
-        
+
         gsap.set(leftText, {
           x: isEvenCard ? -moveDistance : moveDistance,
           y: Math.random() * 50 - 25,
@@ -121,7 +121,7 @@ export default function ServicesSection() {
           opacity: 0,
           force3D: true
         });
-        
+
         gsap.set(rightText, {
           x: isEvenCard ? moveDistance : -moveDistance,
           y: Math.random() * 50 - 25,
@@ -140,20 +140,20 @@ export default function ServicesSection() {
             duration: 1.2,
             ease: 'power2.out'
           }, 0.2)
-          .to(rightText, {
-            x: 0,
-            y: 0,
-            rotation: 0,
-            opacity: 0.5,
-            duration: 1.2,
-            ease: 'power2.out'
-          }, 0.4)
-          .to({}, { duration: 1.0 });
+            .to(rightText, {
+              x: 0,
+              y: 0,
+              rotation: 0,
+              opacity: 0.5,
+              duration: 1.2,
+              ease: 'power2.out'
+            }, 0.4)
+            .to({}, { duration: 1.0 });
           return;
         }
 
         const startTime = index * 1.2; // Clean sequential timing
-        
+
         // Animate current card sliding up from bottom
         tl.to(card, {
           opacity: 1, // Make card visible
@@ -165,41 +165,41 @@ export default function ServicesSection() {
           duration: 0.8,
           ease: 'power3.out'
         }, startTime)
-        
-        // Float in current text from left
-        .to(leftText, {
-          x: 0,
-          y: 0,
-          rotation: 0,
-          opacity: 0.5,
-          duration: 1.0,
-          ease: 'power2.out'
-        }, startTime - 0.3)
-        
-        .to(rightText, {
-          x: 0,
-          y: 0,
-          rotation: 0,
-          opacity: 0.5,
-          duration: 1.0,
-          ease: 'power2.out'
-        }, startTime - 0.1)
-        
-        // Hold the card fully visible
-        .to({}, { duration: 0.8 })
-        
-        // Push previous card to background
-        .to(cards[index - 1], {
-          filter: 'blur(8px)',
-          scale: 0.88,
-          y: -30,
-          opacity: 0.7,
-          zIndex: 15 - index,
-          rotationZ: (Math.random() - 0.5) * 6,
-          duration: 0.6,
-          ease: 'power2.out'
-        }, startTime + 0.3)
-        
+
+          // Float in current text from left
+          .to(leftText, {
+            x: 0,
+            y: 0,
+            rotation: 0,
+            opacity: 0.5,
+            duration: 1.0,
+            ease: 'power2.out'
+          }, startTime - 0.3)
+
+          .to(rightText, {
+            x: 0,
+            y: 0,
+            rotation: 0,
+            opacity: 0.5,
+            duration: 1.0,
+            ease: 'power2.out'
+          }, startTime - 0.1)
+
+          // Hold the card fully visible
+          .to({}, { duration: 0.8 })
+
+          // Push previous card to background
+          .to(cards[index - 1], {
+            filter: 'blur(8px)',
+            scale: 0.88,
+            y: -30,
+            opacity: 0.7,
+            zIndex: 15 - index,
+            rotationZ: (Math.random() - 0.5) * 6,
+            duration: 0.6,
+            ease: 'power2.out'
+          }, startTime + 0.3)
+
         // Float out previous text - alternating directions
         const prevIsEvenCard = (index - 1) % 2 === 0;
         tl.to(cards[index - 1].querySelector('.service-title-left'), {
@@ -210,15 +210,15 @@ export default function ServicesSection() {
           duration: 1.0,
           ease: 'power2.in'
         }, startTime + 0.2)
-        
-        .to(cards[index - 1].querySelector('.service-title-right'), {
-          x: prevIsEvenCard ? (isMobile ? 500 : 1000) : -(isMobile ? 500 : 1000), // Responsive exit directions
-          y: Math.random() * 100 - 50,
-          rotation: Math.random() * 30 - 15,
-          opacity: 0,
-          duration: 1.0,
-          ease: 'power2.in'
-        }, startTime + 0.4);
+
+          .to(cards[index - 1].querySelector('.service-title-right'), {
+            x: prevIsEvenCard ? (isMobile ? 500 : 1000) : -(isMobile ? 500 : 1000), // Responsive exit directions
+            y: Math.random() * 100 - 50,
+            rotation: Math.random() * 30 - 15,
+            opacity: 0,
+            duration: 1.0,
+            ease: 'power2.in'
+          }, startTime + 0.4);
       });
 
       // Setup magnetic effect for cards
@@ -239,25 +239,25 @@ export default function ServicesSection() {
   };
 
   return (
-    <section 
+    <section
       id="services"
       ref={sectionRef}
       className="min-h-screen w-full relative overflow-hidden"
       style={{ background: '#0a0a0a' }}
     >
       {/* Galaxy Background */}
-      <div style={{ 
-        position: 'absolute', 
-        top: 0, 
-        left: 0, 
-        width: '100%', 
-        height: '100%', 
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
         zIndex: 1,
         pointerEvents: 'none'
       }}>
-        <Galaxy 
-          mouseRepulsion={false}
-          mouseInteraction={false}
+        <Galaxy
+          mouseRepulsion={true}
+          mouseInteraction={true}
           density={0.8}
           glowIntensity={0.8}
           saturation={0.1}
@@ -269,9 +269,9 @@ export default function ServicesSection() {
           transparent={true}
         />
       </div>
-      
+
       <div className="h-screen w-full flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8" style={{ position: 'relative', zIndex: 10 }}>
-        <h2 
+        <h2
           ref={titleRef}
           className="text-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-center mb-8 sm:mb-10 md:mb-12 z-20 px-4"
         >
@@ -284,7 +284,7 @@ export default function ServicesSection() {
             const titleWords = service.title.toUpperCase().split(' ');
             const leftText = titleWords.slice(0, Math.ceil(titleWords.length / 2)).join(' ');
             const rightText = titleWords.slice(Math.ceil(titleWords.length / 2)).join(' ');
-            
+
             return (
               <div
                 key={service.id}
@@ -302,7 +302,7 @@ export default function ServicesSection() {
               >
                 {/* Background Text - Left */}
                 <div className="absolute left-[-30px] sm:left-[-50px] md:left-[-100px] top-1/2 transform -translate-y-1/2 z-0">
-                  <h3 
+                  <h3
                     className="service-title-left text-[8vw] sm:text-[7vw] md:text-[6vw] lg:text-[100px] font-black leading-none tracking-tight opacity-50"
                     style={{
                       color: 'transparent',
@@ -319,7 +319,7 @@ export default function ServicesSection() {
 
                 {/* Background Text - Right */}
                 <div className="absolute right-[-30px] sm:right-[-50px] md:right-[-100px] top-1/2 transform -translate-y-1/2 z-0">
-                  <h3 
+                  <h3
                     className="service-title-right text-[8vw] sm:text-[7vw] md:text-[6vw] lg:text-[100px] font-black leading-none tracking-tight opacity-50"
                     style={{
                       color: 'transparent',
@@ -336,8 +336,8 @@ export default function ServicesSection() {
 
                 {/* Central Card - White with Scalloped Edges on Top and Bottom */}
                 <div className="relative z-10 w-72 h-80 sm:w-80 sm:h-96 bg-white shadow-2xl flex flex-col items-center justify-center p-4 sm:p-6 transform rotate-1"
-                     style={{
-                       clipPath: `polygon(
+                  style={{
+                    clipPath: `polygon(
                          0% 8px,
                          5% 0%, 10% 8px,
                          15% 0%, 20% 8px,
@@ -361,28 +361,28 @@ export default function ServicesSection() {
                          15% 100%, 10% calc(100% - 8px),
                          5% 100%, 0% calc(100% - 8px)
                        )`,
-                       fontFamily: 'Kalam, cursive'
-                     }}>
+                    fontFamily: 'Kalam, cursive'
+                  }}>
                   {/* Service Icon */}
                   <div className="text-4xl sm:text-5xl md:text-6xl mb-3 sm:mb-4">
                     {service.icon}
                   </div>
-                  
+
                   {/* Service Title */}
                   <h3 className="text-lg sm:text-xl md:text-2xl font-black text-black mb-3 sm:mb-4 text-center">
                     {service.title}
                   </h3>
-                  
+
                   {/* Description */}
                   <p className="text-xs sm:text-sm text-gray-700 text-center leading-relaxed mb-3 sm:mb-4 px-2 sm:px-3">
                     {service.description}
                   </p>
-                  
+
                   {/* Technology/Features Title */}
                   <h4 className="text-sm sm:text-base md:text-lg font-bold text-black mb-2 text-center">
                     {service.features[0]}
                   </h4>
-                  
+
                   {/* Features List */}
                   <div className="space-y-0.5 sm:space-y-1 text-center">
                     {service.features.slice(1).map((feature, idx) => (

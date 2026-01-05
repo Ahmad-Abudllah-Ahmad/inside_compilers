@@ -1,5 +1,6 @@
-import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { gsap } from 'gsap';
+import { X } from 'lucide-react';
 import './StaggeredMenu.css';
 
 interface MenuItem {
@@ -69,7 +70,7 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
   const busyRef = useRef(false);
   const itemEntranceTweenRef = useRef<gsap.core.Tween | null>(null);
 
-  useLayoutEffect(() => {
+  React.useEffect(() => {
     const ctx = gsap.context(() => {
       const panel = panelRef.current;
       const preContainer = preLayersRef.current;
@@ -389,13 +390,20 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
       </header>
 
       <aside id="staggered-menu-panel" ref={panelRef} className="staggered-menu-panel" aria-hidden={!open}>
-        <div className="sm-panel-inner">
+        <div className="sm-panel-inner relative pt-12 sm:pt-0">
+          <button
+            className="absolute top-2 right-2 text-white hover:opacity-70 transition-opacity z-50 p-2 bg-black/50 rounded-full"
+            onClick={toggleMenu}
+            aria-label="Close menu"
+          >
+            <X size={32} />
+          </button>
           <ul className="sm-panel-list" role="list" data-numbering={displayItemNumbering || undefined}>
             {items && items.length ? (
               items.map((it, idx) => (
                 <li className="sm-panel-itemWrap" key={it.label + idx}>
-                  <button 
-                    className="sm-panel-item" 
+                  <button
+                    className="sm-panel-item"
                     onClick={() => {
                       if (onItemClick) {
                         onItemClick(it);
@@ -408,7 +416,7 @@ export const StaggeredMenu: React.FC<StaggeredMenuProps> = ({
                       // Close menu properly
                       toggleMenu();
                     }}
-                    aria-label={it.ariaLabel} 
+                    aria-label={it.ariaLabel}
                     data-index={idx + 1}
                   >
                     <span className="sm-panel-itemLabel">{it.label}</span>

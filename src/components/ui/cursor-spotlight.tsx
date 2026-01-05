@@ -1,20 +1,21 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 
 export function CursorSpotlight() {
   const spotlightRef = useRef<HTMLDivElement>(null);
-  const isDesktop = useRef(false);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     // Only enable on desktop devices
-    isDesktop.current = window.innerWidth >= 768 && !('ontouchstart' in window);
-    
-    if (!isDesktop.current || !spotlightRef.current) return;
+    const isDesktop = window.innerWidth >= 768 && !('ontouchstart' in window);
+    setIsVisible(isDesktop);
+
+    if (!isDesktop || !spotlightRef.current) return;
 
     const spotlight = spotlightRef.current;
-    
+
     // Set initial styles
     gsap.set(spotlight, {
       scale: 0,
@@ -60,7 +61,7 @@ export function CursorSpotlight() {
     };
   }, []);
 
-  if (!isDesktop.current) return null;
+  if (!isVisible) return null;
 
   return (
     <div

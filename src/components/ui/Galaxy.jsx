@@ -1,7 +1,7 @@
 'use client';
 
 import { Renderer, Program, Mesh, Color, Triangle } from 'ogl';
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import './Galaxy.css';
 
 const vertexShader = `
@@ -172,7 +172,7 @@ void main() {
 }
 `;
 
-export default function Galaxy({
+const GalaxyBase = function Galaxy({
   focal = [0.5, 0.5],
   rotation = [1.0, 0.0],
   starSpeed = 0.5,
@@ -200,7 +200,7 @@ export default function Galaxy({
   useEffect(() => {
     if (!ctnDom.current) return;
     const ctn = ctnDom.current;
-    
+
     // Mobile WebGL context options for better compatibility
     const renderer = new Renderer({
       alpha: transparent,
@@ -209,7 +209,7 @@ export default function Galaxy({
       powerPreference: 'low-power' // Better for mobile battery
     });
     const gl = renderer.gl;
-    
+
     // Check WebGL support
     if (!gl) {
       console.warn('WebGL not supported, Galaxy effect disabled');
@@ -227,13 +227,13 @@ export default function Galaxy({
     let program;
 
     function resize() {
-      // Mobile-friendly scaling
+      // Mobile-friendly scaling - subtle reduction for performance
       const isMobile = window.innerWidth < 768;
-      const scale = isMobile ? 0.75 : 1; // Reduce resolution on mobile for performance
-      
+      const scale = isMobile ? 0.65 : 1; // Reduced from 0.75 to 0.65 for mobile performance while preserving quality
+
       const width = ctn.offsetWidth * scale;
       const height = ctn.offsetHeight * scale;
-      
+
       renderer.setSize(width, height);
       if (program && gl.canvas) {
         program.uniforms.uResolution.value = new Color(
@@ -278,9 +278,47 @@ export default function Galaxy({
 
     const mesh = new Mesh(gl, { geometry, program });
     let animateId;
+    let frameCount = 0;
+    const isMobileDevice = window.innerWidth < 768;
+    let isVisible = true;
+    let isScrolling = false;
+    let scrollTimeout;
+
+    // Intersection Observer for visibility-based rendering
+    const observer = new IntersectionObserver(
+      (entries) => {
+        isVisible = entries[0].isIntersecting;
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(ctn);
+
+    // Scroll detection to reduce rendering during scroll
+    function handleScroll() {
+      isScrolling = true;
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        isScrolling = false;
+      }, 150);
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true });
 
     function update(t) {
       animateId = requestAnimationFrame(update);
+
+      // Skip rendering if not visible
+      if (!isVisible) return;
+
+      // Mobile optimization: skip frames more aggressively
+      // During scroll: render every 3rd frame (~20fps) on mobile only
+      // Normal: render every frame on Desktop, every 2nd on mobile
+      frameCount++;
+      if (isMobileDevice) {
+        if (isScrolling && frameCount % 3 !== 0) return;
+        if (!isScrolling && frameCount % 2 !== 0) return;
+      }
+      // Desktop: render every frame for smoothness (removed scroll throttling)
+
       if (!disableAnimation) {
         program.uniforms.uTime.value = t * 0.001;
         program.uniforms.uStarSpeed.value = (t * 0.001 * starSpeed) / 10.0;
@@ -313,9 +351,9 @@ export default function Galaxy({
       targetMouseActive.current = 0.0;
     }
 
-    // Touch event handlers for mobile
+    // Touch event handlers for mobile - use passive to not block scrolling
     function handleTouchMove(e) {
-      e.preventDefault();
+      // Don't preventDefault - allow normal scrolling
       const touch = e.touches[0];
       const rect = ctn.getBoundingClientRect();
       const x = (touch.clientX - rect.left) / rect.width;
@@ -341,12 +379,12 @@ export default function Galaxy({
     }
 
     if (mouseInteraction) {
-      // Desktop events
-      ctn.addEventListener('mousemove', handlePointerMove);
-      ctn.addEventListener('mouseleave', handlePointerLeave);
-      // Mobile touch events
-      ctn.addEventListener('touchmove', handleTouchMove, { passive: false });
-      ctn.addEventListener('touchend', handleTouchEnd);
+      // Desktop events - listen on window for background effect
+      window.addEventListener('mousemove', handlePointerMove);
+      window.addEventListener('mouseleave', handlePointerLeave);
+      // Mobile touch events - listen on window
+      window.addEventListener('touchmove', handleTouchMove, { passive: true });
+      window.addEventListener('touchend', handleTouchEnd, { passive: true });
       // WebGL context events for mobile
       gl.canvas.addEventListener('webglcontextlost', handleContextLoss);
       gl.canvas.addEventListener('webglcontextrestored', handleContextRestore);
@@ -354,14 +392,17 @@ export default function Galaxy({
 
     return () => {
       cancelAnimationFrame(animateId);
+      clearTimeout(scrollTimeout);
       window.removeEventListener('resize', resize);
+      window.removeEventListener('scroll', handleScroll);
+      observer.disconnect();
       if (mouseInteraction) {
         // Desktop cleanup
-        ctn.removeEventListener('mousemove', handlePointerMove);
-        ctn.removeEventListener('mouseleave', handlePointerLeave);
+        window.removeEventListener('mousemove', handlePointerMove);
+        window.removeEventListener('mouseleave', handlePointerLeave);
         // Mobile cleanup
-        ctn.removeEventListener('touchmove', handleTouchMove);
-        ctn.removeEventListener('touchend', handleTouchEnd);
+        window.removeEventListener('touchmove', handleTouchMove);
+        window.removeEventListener('touchend', handleTouchEnd);
         // WebGL context cleanup
         gl.canvas.removeEventListener('webglcontextlost', handleContextLoss);
         gl.canvas.removeEventListener('webglcontextrestored', handleContextRestore);
@@ -392,3 +433,6 @@ export default function Galaxy({
 
   return <div ref={ctnDom} className="galaxy-container" {...rest} />;
 }
+
+// Wrap in React.memo to prevent re-renders from parent state changes
+export default React.memo(GalaxyBase);

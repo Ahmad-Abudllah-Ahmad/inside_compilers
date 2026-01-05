@@ -4,6 +4,14 @@
   position: absolute;
   top: 0;
   left: 0;
+  /* Hardware acceleration for smoother rendering */
+  will-change: contents;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  /* Contain paint to prevent external repainting during scroll */
+  contain: layout paint;
+  /* Prevent pointer events from blocking scroll */
+  pointer-events: none;
 }
 
 .galaxy-container canvas {

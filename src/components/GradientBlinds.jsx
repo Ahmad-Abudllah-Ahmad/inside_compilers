@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react';
+
+import React, { useEffect, useRef } from 'react';
 import { Renderer, Program, Mesh, Triangle } from 'ogl';
 import './GradientBlinds.css';
 
@@ -45,6 +46,7 @@ const GradientBlinds = ({
   const geometryRef = useRef(null);
   const rendererRef = useRef(null);
   const mouseTargetRef = useRef([0, 0]);
+  const cursorRef = useRef({ x: 0, y: 0 });
   const lastTimeRef = useRef(0);
   const firstResizeRef = useRef(true);
 
@@ -52,10 +54,15 @@ const GradientBlinds = ({
     const container = containerRef.current;
     if (!container) return;
 
+    // WebGL enabled on all devices (mobile performance handled by reduced DPR)
+
     const renderer = new Renderer({
-      dpr: dpr ?? (typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1),
-      alpha: true,
-      antialias: true
+      dpr: dpr ?? (typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 1.5) : 1),
+      alpha: true, // Revert to true to ensure blend modes work correctly
+      depth: false,
+      stencil: false,
+      antialias: false,
+      powerPreference: 'high-performance'
     });
     rendererRef.current = renderer;
     const gl = renderer.gl;
@@ -171,13 +178,16 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
   float r = max(uSpotlightRadius, 1e-4);
   float dn = d / r;
   float spot = (1.0 - 2.0 * pow(dn, uSpotlightSoftness)) * uSpotlightOpacity;
-  vec3 cir = vec3(spot);
+  spot = max(0.0, spot);
   float stripe = fract(uvMod.x * max(uBlindCount, 1.0));
   if (uShineFlip > 0.5) stripe = 1.0 - stripe;
-    vec3 ran = vec3(stripe);
+  vec3 ran = vec3(stripe);
 
-    vec3 col = cir + base - ran;
-    col += (rand(gl_FragCoord.xy + iTime) - 0.5) * uNoise;
+  vec3 pattern = base - ran;
+  pattern += (rand(gl_FragCoord.xy + iTime) - 0.5) * uNoise;
+  
+  // Flashlight Effect: Multiply pattern by spotlight intensity
+  vec3 col = pattern * spot;
 
     fragColor = vec4(col, 1.0);
 }
@@ -244,6 +254,11 @@ void main() {
 
       if (firstResizeRef.current) {
         firstResizeRef.current = false;
+        // Init cursor to center of canvas in client space
+        cursorRef.current = {
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height / 2
+        };
         const cx = gl.drawingBufferWidth / 2;
         const cy = gl.drawingBufferHeight / 2;
         uniforms.iMouse.value = [cx, cy];
@@ -256,20 +271,31 @@ void main() {
     ro.observe(container);
 
     const onPointerMove = e => {
-      const rect = canvas.getBoundingClientRect();
-      const scale = renderer.dpr || 1;
-      const x = (e.clientX - rect.left) * scale;
-      const y = (rect.height - (e.clientY - rect.top)) * scale;
-      mouseTargetRef.current = [x, y];
-      if (mouseDampening <= 0) {
-        uniforms.iMouse.value = [x, y];
+      cursorRef.current = { x: e.clientX, y: e.clientY };
+    };
+
+    const onTouchMove = e => {
+      if (e.touches.length > 0) {
+        cursorRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       }
     };
-    canvas.addEventListener('pointermove', onPointerMove);
+
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    window.addEventListener('touchmove', onTouchMove, { passive: true });
+    window.addEventListener('touchstart', onTouchMove, { passive: true });
 
     const loop = t => {
       rafRef.current = requestAnimationFrame(loop);
+
       uniforms.iTime.value = t * 0.001;
+
+      // Recalculate mouse target every frame to handle scrolling
+      const rect = canvas.getBoundingClientRect();
+      const scale = renderer.dpr || 1;
+      const tx = (cursorRef.current.x - rect.left) * scale;
+      const ty = (rect.height - (cursorRef.current.y - rect.top)) * scale;
+      mouseTargetRef.current = [tx, ty];
+
       if (mouseDampening > 0) {
         if (!lastTimeRef.current) lastTimeRef.current = t;
         const dt = (t - lastTimeRef.current) / 1000;
@@ -283,7 +309,10 @@ void main() {
         cur[1] += (target[1] - cur[1]) * factor;
       } else {
         lastTimeRef.current = t;
+        uniforms.iMouse.value = mouseTargetRef.current;
       }
+
+      // Optimization: Only render if not paused
       if (!paused && programRef.current && meshRef.current) {
         try {
           renderer.render({ scene: meshRef.current });
@@ -292,11 +321,35 @@ void main() {
         }
       }
     };
+
+    // PERFORMANCE OPTIMIZATION: IntersectionObserver to pause loop when off-screen
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        if (!rafRef.current) {
+          // Reset timing to prevent large dt jumps after resume
+          lastTimeRef.current = 0;
+          rafRef.current = requestAnimationFrame(loop);
+        }
+      } else {
+        if (rafRef.current) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = null;
+        }
+      }
+    }, { rootMargin: '200px' });
+
+    observer.observe(container);
+
+    // Start loop immediately on mount (observer callback may be delayed)
+    lastTimeRef.current = performance.now();
     rafRef.current = requestAnimationFrame(loop);
 
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      canvas.removeEventListener('pointermove', onPointerMove);
+      observer.disconnect();
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchstart', onTouchMove);
       ro.disconnect();
       if (canvas.parentElement === container) {
         container.removeChild(canvas);
@@ -309,6 +362,13 @@ void main() {
       callIfFn(programRef.current, 'remove');
       callIfFn(geometryRef.current, 'remove');
       callIfFn(meshRef.current, 'remove');
+
+      // CRITICAL: Lose Context
+      if (gl) {
+        const loseContext = gl.getExtension('WEBGL_lose_context');
+        if (loseContext) loseContext.loseContext();
+      }
+
       callIfFn(rendererRef.current, 'destroy');
       programRef.current = null;
       geometryRef.current = null;
@@ -335,7 +395,7 @@ void main() {
   return (
     <div
       ref={containerRef}
-      className={`gradient-blinds-container ${className}`}
+      className={`gradient-blinds-container ${className || ''}`}
       style={{
         ...(mixBlendMode && {
           mixBlendMode: mixBlendMode
@@ -345,4 +405,4 @@ void main() {
   );
 };
 
-export default GradientBlinds;
+export default React.memo(GradientBlinds);

@@ -33,15 +33,15 @@ function HeroNavButton({ text, targetId, image }: { text: string; targetId: stri
 
   const handleMouseEnter = (ev: React.MouseEvent) => {
     if (!itemRef.current || !marqueeRef.current || !marqueeInnerRef.current) return;
-    
+
     const rect = itemRef.current.getBoundingClientRect();
     const x = ev.clientX - rect.left;
     const y = ev.clientY - rect.top;
     const edge = findClosestEdge(x, y, rect.width, rect.height);
-    
+
     gsap
       .timeline({ defaults: animationDefaults })
-      .set(marqueeRef.current, { 
+      .set(marqueeRef.current, {
         top: rect.top,
         left: rect.left,
         width: rect.width,
@@ -92,12 +92,12 @@ function HeroNavButton({ text, targetId, image }: { text: string; targetId: stri
   ));
 
   return (
-    <div 
-      className="relative overflow-hidden text-center cursor-pointer group hero-nav-button h-16 w-full" 
+    <div
+      className="relative overflow-hidden text-center cursor-pointer group hero-nav-button h-16 w-full"
       ref={itemRef}
       style={{ boxShadow: '0 -1px rgba(255,255,255,0.3), 0 1px rgba(255,255,255,0.3)', zIndex: 300 }}
     >
-      <button 
+      <button
         className="flex items-center justify-center h-full w-full relative cursor-pointer text-white font-black text-[8vw] sm:text-[7vw] md:text-[6vw] lg:text-[5vw] xl:text-[4vw] leading-none tracking-wider transition-all duration-300 bg-transparent border-none pointer-events-auto"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
@@ -106,11 +106,11 @@ function HeroNavButton({ text, targetId, image }: { text: string; targetId: stri
       >
         <span className="relative striped-text" style={{ zIndex: 20 }}>{text}</span>
       </button>
-      
-      <div 
+
+      <div
         className="marquee white-strip"
         ref={marqueeRef}
-        style={{ 
+        style={{
           position: 'fixed',
           top: 0,
           left: 0,
@@ -122,7 +122,7 @@ function HeroNavButton({ text, targetId, image }: { text: string; targetId: stri
           background: 'white',
           backgroundImage: 'none',
           backgroundBlendMode: 'normal',
-          transform: 'translate3d(0, -100%, 0)', 
+          transform: 'translate3d(0, -100%, 0)',
           zIndex: 999999,
           margin: 0,
           padding: 0,
@@ -164,15 +164,15 @@ export default function HeroSection() {
         trigger: sectionRef.current,
         start: "top top",
         end: "+=600%",
-        scrub: true,
+        scrub: 0.5, // Smoother scrubbing with slight delay for better reverse
         pin: true,
         anticipatePin: 1,
         refreshPriority: 0,
         invalidateOnRefresh: true,
-        fastScrollEnd: true,
+        fastScrollEnd: false, // Disable for smoother reverse
         onRefresh: () => {
           // Reset to initial state on refresh
-          gsap.set([insideRef.current, compilerRef.current], { 
+          gsap.set([insideRef.current, compilerRef.current], {
             x: 0,
             y: 0,
             opacity: 1,
@@ -187,8 +187,8 @@ export default function HeroSection() {
             transformOrigin: "center center",
             clearProps: "transform"
           });
-          gsap.set([descriptionRef.current, sinceRef.current, navigationRef.current], { 
-            opacity: 0, 
+          gsap.set([descriptionRef.current, sinceRef.current, navigationRef.current], {
+            opacity: 0,
             y: 50,
             visibility: "hidden",
             display: "none",
@@ -198,17 +198,57 @@ export default function HeroSection() {
           });
         },
         onUpdate: (self) => {
-          // Ensure proper layering during animation
-          if (self.progress === 0) {
-            gsap.set([descriptionRef.current, sinceRef.current, navigationRef.current], { 
+          const progress = self.progress;
+
+          // Handle initial state (scroll at top)
+          if (progress < 0.05) {
+            gsap.set([descriptionRef.current, sinceRef.current, navigationRef.current], {
               opacity: 0,
               visibility: "hidden",
               display: "none"
             });
             gsap.set([insideRef.current, compilerRef.current], {
-              x: 0,
-              y: 0,
               opacity: 1,
+              visibility: "visible",
+              x: 0
+            });
+            gsap.set(titleContainerRef.current, {
+              opacity: 1,
+              scale: 1,
+              filter: "blur(0px)",
+              transformOrigin: "center center"
+            });
+          }
+
+          // When scrolling back from zoom (progress < 0.2 means before zoom starts)
+          // Reset transform origin to center for proper display
+          if (progress < 0.2) {
+            gsap.set(titleContainerRef.current, {
+              transformOrigin: "center center"
+            });
+          }
+
+          // Handle navigation visibility based on progress
+          if (progress > 0.85) {
+            // Near end - ensure navigation is visible
+            gsap.set(navigationRef.current, {
+              display: "block",
+              visibility: "visible"
+            });
+          } else if (progress < 0.8) {
+            // Scrolling back up - hide navigation
+            gsap.set(navigationRef.current, {
+              pointerEvents: "none"
+            });
+          }
+
+          // Ensure title visibility during zoom phases
+          if (progress > 0.9) {
+            gsap.set(titleContainerRef.current, {
+              visibility: "hidden"
+            });
+          } else {
+            gsap.set(titleContainerRef.current, {
               visibility: "visible"
             });
           }
@@ -234,150 +274,161 @@ export default function HeroSection() {
     // Stage 1: Split text and reveal description (responsive positioning)
     const isMobile = window.innerWidth < 768;
     const splitDistance = isMobile ? "-25vw" : "-35vw";
-    
+
     tl.to(insideRef.current, {
       x: splitDistance,
       duration: 0.6,
       ease: "power2.inOut"
     }, 0)
-    .to(compilerRef.current, {
-      x: isMobile ? "25vw" : "35vw", 
-      duration: 0.6,
-      ease: "power2.inOut"
-    }, 0)
-    .set(descriptionRef.current, {
-      display: "flex"
-    }, 0.3)
-    .to(descriptionRef.current, {
-      opacity: 1,
-      y: 0,
-      visibility: "visible",
-      duration: 0.5,
-      ease: "power2.out"
-    }, 0.3)
-    
-    // Stage 2: Hide description, show "Since 2023"
-    .to(descriptionRef.current, {
-      opacity: 0,
-      y: -30,
-      duration: 0.3,
-      ease: "power2.inOut"
-    }, 0.8)
-    .set(descriptionRef.current, {
-      visibility: "hidden",
-      display: "none"
-    }, 1.1)
-    .set(sinceRef.current, {
-      display: "flex"
-    }, 0.9)
-    .to(sinceRef.current, {
-      opacity: 1,
-      y: 0,
-      visibility: "visible",
-      duration: 0.5,
-      ease: "power2.out"
-    }, 0.9)
-    
-    // Stage 3: Combine text and zoom in
-    .to(sinceRef.current, {
-      opacity: 0,
-      y: -30,
-      duration: 0.3,
-      ease: "power2.inOut"
-    }, 1.3)
-    .set(sinceRef.current, {
-      visibility: "hidden",
-      display: "none"
-    }, 1.6)
-    
-    // Combine INSIDE and COMPILERS
-    .to([insideRef.current, compilerRef.current], {
-      x: 0,
-      duration: 0.8,
-      ease: "power2.inOut"
-    }, 1.4)
-    
-    // Stage 4: Continuous zoom into the letter O in COMPILERS
-    // Position transform origin on the O letter in COMPILERS (precise positioning)
-    .set(titleContainerRef.current, {
-      transformOrigin: "85% center" // The O in COMPILERS is approximately at 85% from left
-    }, 2.0)
-    
-    // Progressive zoom into the O with blur effects
-    .to(titleContainerRef.current, {
-      scale: 2,
-      filter: "blur(0px)",
-      duration: 1.5,
-      ease: "power1.inOut"
-    }, 2.0)
-    
-    .to(titleContainerRef.current, {
-      scale: 4,
-      filter: "blur(1px)",
-      duration: 1.5,
-      ease: "power1.inOut"
-    }, 3.2)
-    
-    .to(titleContainerRef.current, {
-      scale: 8,
-      filter: "blur(2px)",
-      duration: 1.5,
-      ease: "power1.inOut"
-    }, 4.4)
-    
-    .to(titleContainerRef.current, {
-      scale: 16,
-      filter: "blur(4px)",
-      duration: 1.5,
-      ease: "power1.inOut"
-    }, 5.6)
-    
-    .to(titleContainerRef.current, {
-      scale: 32,
-      filter: "blur(8px)",
-      duration: 1.5,
-      ease: "power1.inOut"
-    }, 6.8)
-    
-    .to(titleContainerRef.current, {
-      scale: 64,
-      filter: "blur(16px)",
-      duration: 1.2,
-      ease: "power2.inOut"
-    }, 8.0)
-    
-    // Final zoom - text disappears into the O with maximum blur
-    .to(titleContainerRef.current, {
-      scale: 150,
-      filter: "blur(32px)",
-      opacity: 0,
-      duration: 1.0,
-      ease: "power3.in"
-    }, 9.0)
-    
-    // Show navigation emerging from inside the O with shining effects
-    .set(navigationRef.current, {
-      display: "block",
-      scale: 0.1,
-      opacity: 0,
-      filter: "blur(10px) brightness(0.3)"
-    }, 9.8)
-    .to(navigationRef.current, {
-      opacity: 1,
-      scale: 1,
-      filter: "blur(0px) brightness(1) drop-shadow(0 0 20px rgba(255,255,255,0.8))",
-      visibility: "visible",
-      pointerEvents: "auto",
-      duration: 1.5,
-      ease: "back.out(1.7)"
-    }, 9.8)
-    
-    // Add extra glow/shine effect that fades out
-    .to(navigationRef.current, {
-      filter: "blur(0px) brightness(1) drop-shadow(0 0 0px rgba(255,255,255,0))",
-      duration: 2.0,
-      ease: "power2.out"
-    }, 11.0);
+      .to(compilerRef.current, {
+        x: isMobile ? "25vw" : "35vw",
+        duration: 0.6,
+        ease: "power2.inOut"
+      }, 0)
+      .set(descriptionRef.current, {
+        display: "flex"
+      }, 0.3)
+      .to(descriptionRef.current, {
+        opacity: 1,
+        y: 0,
+        visibility: "visible",
+        duration: 0.5,
+        ease: "power2.out"
+      }, 0.3)
+
+      // Stage 2: Hide description, show "Since 2023"
+      .to(descriptionRef.current, {
+        opacity: 0,
+        y: -30,
+        duration: 0.3,
+        ease: "power2.inOut"
+      }, 0.8)
+      .set(descriptionRef.current, {
+        visibility: "hidden",
+        display: "none"
+      }, 1.1)
+      .set(sinceRef.current, {
+        display: "flex"
+      }, 0.9)
+      .to(sinceRef.current, {
+        opacity: 1,
+        y: 0,
+        visibility: "visible",
+        duration: 0.5,
+        ease: "power2.out"
+      }, 0.9)
+
+      // Stage 3: Combine text and zoom in
+      .to(sinceRef.current, {
+        opacity: 0,
+        y: -30,
+        duration: 0.3,
+        ease: "power2.inOut"
+      }, 1.3)
+      .set(sinceRef.current, {
+        visibility: "hidden",
+        display: "none"
+      }, 1.6)
+
+      // Combine INSIDE and COMPILERS
+      .to([insideRef.current, compilerRef.current], {
+        x: 0,
+        duration: 0.8,
+        ease: "power2.inOut"
+      }, 1.4)
+
+      // Stage 4: Continuous zoom into the letter O in COMPILERS
+      // Set initial transform origin at center for the start, then animate to 85% for zoom
+      .set(titleContainerRef.current, {
+        transformOrigin: "center center",
+        scale: 1
+      }, 0)  // Set at very start of timeline
+
+      // Position transform origin on the O letter in COMPILERS (precise positioning)
+      // Use fromTo to ensure proper reversing
+      .fromTo(titleContainerRef.current, {
+        transformOrigin: "center center"
+      }, {
+        transformOrigin: "85% center", // The O in COMPILERS is approximately at 85% from left
+        duration: 0.01,
+        immediateRender: false
+      }, 2.0)
+
+      // Progressive zoom into the O with blur effects
+      .to(titleContainerRef.current, {
+        scale: 2,
+        filter: "blur(0px)",
+        duration: 1.5,
+        ease: "power1.inOut"
+      }, 2.0)
+
+      .to(titleContainerRef.current, {
+        scale: 4,
+        filter: "blur(1px)",
+        duration: 1.5,
+        ease: "power1.inOut"
+      }, 3.2)
+
+      .to(titleContainerRef.current, {
+        scale: 8,
+        filter: "blur(2px)",
+        duration: 1.5,
+        ease: "power1.inOut"
+      }, 4.4)
+
+      .to(titleContainerRef.current, {
+        scale: 16,
+        filter: "blur(4px)",
+        duration: 1.5,
+        ease: "power1.inOut"
+      }, 5.6)
+
+      .to(titleContainerRef.current, {
+        scale: 32,
+        filter: "blur(8px)",
+        duration: 1.5,
+        ease: "power1.inOut"
+      }, 6.8)
+
+      .to(titleContainerRef.current, {
+        scale: 64,
+        filter: "blur(16px)",
+        duration: 1.2,
+        ease: "power2.inOut"
+      }, 8.0)
+
+      // Final zoom - text disappears into the O with maximum blur
+      .to(titleContainerRef.current, {
+        scale: 150,
+        filter: "blur(32px)",
+        opacity: 0,
+        duration: 1.0,
+        ease: "power3.in"
+      }, 9.0)
+
+      // Show navigation emerging from inside the O with shining effects
+      .set(navigationRef.current, {
+        display: "block",
+        scale: 0.1,
+        opacity: 0,
+        filter: "blur(10px) brightness(0.3)"
+      }, 9.8)
+      .to(navigationRef.current, {
+        opacity: 1,
+        scale: 1,
+        filter: "blur(0px) brightness(1) drop-shadow(0 0 20px rgba(255,255,255,0.8))",
+        visibility: "visible",
+        pointerEvents: "auto",
+        duration: 1.5,
+        ease: "back.out(1.7)"
+      }, 9.8)
+
+      // Add extra glow/shine effect that fades out
+      .to(navigationRef.current, {
+        filter: "blur(0px) brightness(1) drop-shadow(0 0 0px rgba(255,255,255,0))",
+        duration: 2.0,
+        ease: "power2.out"
+      }, 11.0);
 
     return () => {
       // Cleanup on component unmount
@@ -391,16 +442,16 @@ export default function HeroSection() {
   }, []);
 
   return (
-    <section 
+    <section
       id="home"
       ref={sectionRef}
       className="relative h-screen text-text overflow-hidden"
       style={{ background: '#0a0a0a' }}
     >
       {/* Main Title */}
-      <div className="absolute inset-0 flex items-center justify-center overflow-hidden px-4 sm:px-6 lg:px-8" style={{ zIndex: 1 }}>
-        <div className="text-center w-full max-w-none">
-          <div ref={titleContainerRef} className="text-[8vw] sm:text-[7vw] md:text-[8vw] lg:text-[9vw] xl:text-[10vw] 2xl:text-[11vw] font-bold leading-none tracking-wider flex items-center justify-center gap-1 sm:gap-2 md:gap-4 lg:gap-6 whitespace-nowrap transform-gpu will-change-transform">
+      <div className="absolute inset-0 flex items-center justify-center overflow-visible" style={{ zIndex: 1 }}>
+        <div className="text-center w-full overflow-visible" style={{ maxWidth: '100vw' }}>
+          <div ref={titleContainerRef} className="text-[8.5vw] sm:text-[8vw] md:text-[8.5vw] lg:text-[9vw] xl:text-[9.5vw] 2xl:text-[10vw] font-bold leading-none tracking-wider flex items-center justify-center gap-[0.5vw] sm:gap-[0.75vw] md:gap-[1vw] whitespace-nowrap transform-gpu will-change-transform overflow-visible" style={{ width: 'max-content', margin: '0 auto' }}>
             <span ref={insideRef} className="inline-block text-text transform-gpu will-change-transform" style={{ fontFamily: 'Raleway, sans-serif', fontWeight: 100 }}>
               <ScrollFloat
                 animationDuration={1}
@@ -428,7 +479,7 @@ export default function HeroSection() {
       </div>
 
       {/* Stage 1: Center Description */}
-      <div 
+      <div
         ref={descriptionRef}
         className="absolute inset-0 flex items-center justify-center opacity-0 z-20 pointer-events-none"
         style={{ visibility: 'hidden' }}
@@ -450,7 +501,7 @@ export default function HeroSection() {
       </div>
 
       {/* Stage 2: Since 2023 */}
-      <div 
+      <div
         ref={sinceRef}
         className="absolute inset-0 flex items-center justify-center opacity-0 z-20 pointer-events-none"
         style={{ visibility: 'hidden' }}
@@ -466,7 +517,7 @@ export default function HeroSection() {
       </div>
 
       {/* Stage 3: Navigation Menu */}
-      <div 
+      <div
         ref={navigationRef}
         className="absolute inset-0 flex items-center justify-center opacity-0 pointer-events-none"
         style={{ visibility: 'hidden', transform: 'scale(0.8)', zIndex: 100 }}
@@ -474,25 +525,25 @@ export default function HeroSection() {
         <div className="w-full h-full relative">
           {/* Main navigation in center */}
           <div className="flex flex-col items-center justify-center h-full w-full px-4 pointer-events-auto" style={{ zIndex: 100 }}>
-            <HeroNavButton 
-              text="SERVICES" 
-              targetId="services" 
-              image="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&h=400&fit=crop" 
+            <HeroNavButton
+              text="SERVICES"
+              targetId="services"
+              image="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&h=400&fit=crop"
             />
-            <HeroNavButton 
-              text="PROJECTS" 
-              targetId="projects" 
-              image="https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=600&h=400&fit=crop" 
+            <HeroNavButton
+              text="PROJECTS"
+              targetId="projects"
+              image="https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=600&h=400&fit=crop"
             />
-            <HeroNavButton 
-              text="ABOUT" 
-              targetId="about" 
-              image="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&h=400&fit=crop" 
+            <HeroNavButton
+              text="ABOUT"
+              targetId="about"
+              image="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&h=400&fit=crop"
             />
-            <HeroNavButton 
-              text="CONTACT" 
-              targetId="contact" 
-              image="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&h=400&fit=crop" 
+            <HeroNavButton
+              text="CONTACT"
+              targetId="contact"
+              image="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&h=400&fit=crop"
             />
           </div>
         </div>

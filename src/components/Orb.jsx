@@ -192,7 +192,9 @@ export default function Orb({ hue = 0, hoverIntensity = 0.2, rotateOnHover = tru
 
     function resize() {
       if (!container) return;
-      const dpr = window.devicePixelRatio || 1;
+      // Mobile optimization: reduce DPR to 1 for better performance
+      const isMobile = window.innerWidth < 768;
+      const dpr = isMobile ? 1 : Math.min(window.devicePixelRatio || 1, 1.5);
       const width = container.clientWidth;
       const height = container.clientHeight;
       renderer.setSize(width * dpr, height * dpr);
@@ -235,8 +237,16 @@ export default function Orb({ hue = 0, hoverIntensity = 0.2, rotateOnHover = tru
     container.addEventListener('mouseleave', handleMouseLeave);
 
     let rafId;
+    let frameCount = 0;
+    const isMobileDevice = window.innerWidth < 768;
+
     const update = t => {
       rafId = requestAnimationFrame(update);
+
+      // Mobile optimization: skip every 3rd frame for ~40fps (still smooth)
+      frameCount++;
+      if (isMobileDevice && frameCount % 3 === 0) return;
+
       const dt = (t - lastTime) * 0.001;
       lastTime = t;
       program.uniforms.iTime.value = t * 0.001;

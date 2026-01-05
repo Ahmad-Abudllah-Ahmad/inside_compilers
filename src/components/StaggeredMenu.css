@@ -5,6 +5,13 @@
   width: 100vw;
   height: 100vh;
   z-index: 999;
+  /* CRITICAL: Allow touch/click events to pass through when menu is closed */
+  pointer-events: none;
+}
+
+/* Enable pointer events on the entire wrapper when menu is open */
+.staggered-menu-wrapper[data-open="true"] {
+  pointer-events: auto;
 }
 
 .staggered-menu-header {
@@ -21,7 +28,8 @@
   z-index: 20;
 }
 
-.staggered-menu-header > * {
+/* Enable pointer events ONLY on the toggle button and logo */
+.staggered-menu-header>* {
   pointer-events: auto;
 }
 

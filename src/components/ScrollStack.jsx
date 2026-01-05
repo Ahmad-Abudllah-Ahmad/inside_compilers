@@ -75,7 +75,7 @@ const ScrollStack = ({
     if (!cardsRef.current.length || isUpdatingRef.current) return;
 
     isUpdatingRef.current = true;
-    
+
     // Debounce rapid updates to prevent glitching
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
@@ -197,15 +197,18 @@ const ScrollStack = ({
   }, [updateCardTransforms]);
 
   const setupLenis = useCallback(() => {
+    // Mobile detection for subtle scroll optimizations
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
     if (useWindowScroll) {
       const lenis = new Lenis({
-        duration: 1.2,
+        duration: isMobile ? 1.0 : 1.2, // Slightly reduced duration on mobile
         easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-        smoothWheel: true,
-        touchMultiplier: 2,
+        smoothWheel: true, // Keep smooth scroll for design consistency
+        touchMultiplier: isMobile ? 1.5 : 2, // Slightly reduced touch sensitivity on mobile
         infinite: false,
         wheelMultiplier: 1,
-        lerp: 0.1,
+        lerp: isMobile ? 0.12 : 0.1, // Slightly faster lerp on mobile
         syncTouch: true,
         syncTouchLerp: 0.075
       });
@@ -227,19 +230,19 @@ const ScrollStack = ({
       const lenis = new Lenis({
         wrapper: scroller,
         content: scroller.querySelector('.scroll-stack-inner'),
-        duration: 1.2,
+        duration: isMobile ? 1.0 : 1.2, // Slightly reduced duration on mobile
         easing: t => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-        smoothWheel: true,
-        touchMultiplier: 2,
+        smoothWheel: true, // Keep smooth scroll for design consistency
+        touchMultiplier: isMobile ? 1.5 : 2, // Slightly reduced touch sensitivity on mobile
         infinite: false,
         gestureOrientationHandler: true,
         normalizeWheel: true,
         wheelMultiplier: 1,
-        touchInertiaMultiplier: 35,
-        lerp: 0.1,
+        touchInertiaMultiplier: isMobile ? 28 : 35, // Slightly reduced inertia on mobile
+        lerp: isMobile ? 0.12 : 0.1, // Slightly faster lerp on mobile
         syncTouch: true,
         syncTouchLerp: 0.075,
-        touchInertia: 0.6
+        touchInertia: isMobile ? 0.5 : 0.6 // Slightly reduced touch inertia on mobile
       });
 
       lenis.on('scroll', handleScroll);
