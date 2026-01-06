@@ -438,6 +438,25 @@ const GridScanBase = ({
         renderer.toneMapping = THREE.NoToneMapping;
         renderer.autoClear = false;
         renderer.setClearColor(0x000000, 0);
+
+        // WebGL context loss handling
+        let contextLost = false;
+        const handleContextLost = (event) => {
+            event.preventDefault();
+            contextLost = true;
+            if (rafRef.current) {
+                cancelAnimationFrame(rafRef.current);
+                rafRef.current = null;
+            }
+            console.warn('GridScan: WebGL context lost');
+        };
+        const handleContextRestored = () => {
+            contextLost = false;
+            console.log('GridScan: WebGL context restored');
+        };
+        renderer.domElement.addEventListener('webglcontextlost', handleContextLost, false);
+        renderer.domElement.addEventListener('webglcontextrestored', handleContextRestored, false);
+
         container.appendChild(renderer.domElement);
 
         const uniforms = {
@@ -554,16 +573,21 @@ const GridScanBase = ({
             material.uniforms.uYaw.value = THREE.MathUtils.clamp(yawCurrent.current * yawScale, -0.6, 0.6);
 
             material.uniforms.iTime.value = now / 1000;
-            renderer.clear(true, true, true);
-            if (composerRef.current) {
-                composerRef.current.render(dt);
-            } else {
-                renderer.render(scene, camera);
+
+            // Skip rendering if context is lost
+            if (!contextLost) {
+                renderer.clear(true, true, true);
+                if (composerRef.current) {
+                    composerRef.current.render(dt);
+                } else {
+                    renderer.render(scene, camera);
+                }
             }
-            if (isVisibleRef.current) {
+
+            if (isVisibleRef.current && !contextLost) {
                 rafRef.current = requestAnimationFrame(tick);
             } else {
-                rafRef.current = null; // Pause when not visible
+                rafRef.current = null; // Pause when not visible or context lost
             }
         };
         // PERFORMANCE: IntersectionObserver to pause when off-screen
@@ -584,6 +608,8 @@ const GridScanBase = ({
             observer.disconnect();
             if (rafRef.current) cancelAnimationFrame(rafRef.current);
             window.removeEventListener('resize', onResize);
+            renderer.domElement.removeEventListener('webglcontextlost', handleContextLost);
+            renderer.domElement.removeEventListener('webglcontextrestored', handleContextRestored);
             material.dispose();
             quad.geometry.dispose();
 
@@ -592,7 +618,9 @@ const GridScanBase = ({
                 composerRef.current = null;
             }
             renderer.dispose();
-            container.removeChild(renderer.domElement);
+            if (container.contains(renderer.domElement)) {
+                container.removeChild(renderer.domElement);
+            }
         };
     }, [
         sensitivity,

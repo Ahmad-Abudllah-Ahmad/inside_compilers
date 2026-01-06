@@ -167,10 +167,10 @@ export default function ContactSection() {
         id="contact"
         ref={sectionRef}
         className="py-[var(--section-padding)] relative overflow-hidden flex items-center justify-center"
-        style={{ background: '#000000', minHeight: '100vh' }}
+        style={{ background: '#000000', minHeight: '100vh', contain: 'layout style paint' }}
       >
         {/* Antigravity Background - visible on all screens */}
-        <div className="absolute inset-0 w-full h-full" style={{ zIndex: 1 }}>
+        <div className="absolute inset-0 w-full h-full" style={{ zIndex: -1, willChange: 'transform', transform: 'translateZ(0)' }}>
           <Antigravity
             className="w-full h-full"
             style={{ width: '100%', height: '100%' }}

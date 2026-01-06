@@ -19,7 +19,7 @@ export const GridBeam = ({
   height?: number;
   x?: number;
   y?: number;
-  strokeDasharray?: any;
+  strokeDasharray?: number | string;
   numSquares?: number;
   className?: string;
   maxDelay?: number;

@@ -209,8 +209,7 @@ export default function HeroSection() {
             });
             gsap.set([insideRef.current, compilerRef.current], {
               opacity: 1,
-              visibility: "visible",
-              x: 0
+              visibility: "visible"
             });
             gsap.set(titleContainerRef.current, {
               opacity: 1,
@@ -273,7 +272,7 @@ export default function HeroSection() {
 
     // Stage 1: Split text and reveal description (responsive positioning)
     const isMobile = window.innerWidth < 768;
-    const splitDistance = isMobile ? "-25vw" : "-35vw";
+    const splitDistance = isMobile ? "-45vw" : "-35vw";
 
     tl.to(insideRef.current, {
       x: splitDistance,
@@ -281,7 +280,7 @@ export default function HeroSection() {
       ease: "power2.inOut"
     }, 0)
       .to(compilerRef.current, {
-        x: isMobile ? "25vw" : "35vw",
+        x: isMobile ? "45vw" : "35vw",
         duration: 0.6,
         ease: "power2.inOut"
       }, 0)
@@ -446,7 +445,7 @@ export default function HeroSection() {
       id="home"
       ref={sectionRef}
       className="relative h-screen text-text overflow-hidden"
-      style={{ background: '#0a0a0a' }}
+      style={{ background: '#0a0a0a', contain: 'layout style paint', willChange: 'transform', transform: 'translateZ(0)' }}
     >
       {/* Main Title */}
       <div className="absolute inset-0 flex items-center justify-center overflow-visible" style={{ zIndex: 1 }}>

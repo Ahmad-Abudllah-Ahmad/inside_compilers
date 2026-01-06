@@ -114,6 +114,26 @@ export function MenuOverlay({ isOpen, onClose, onNavClick }: MenuOverlayProps) {
           transition={{ duration: 0.3 }}
           onClick={onClose}
         >
+          {/* Close button - positioned top-right, OUTSIDE menuRef for proper layering on mobile */}
+          <motion.button
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+            data-menu-close
+            className="fixed top-4 right-4 sm:top-8 sm:right-8 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-white hover:text-accent-cyan transition-colors duration-200 bg-black/80 backdrop-blur-sm rounded-full border border-white/20 pointer-events-auto"
+            style={{ zIndex: 999999 }}
+            whileHover={{ rotate: 90, scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2, duration: 0.3 }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </motion.button>
+
           <div
             ref={menuRef}
             className="min-h-screen relative z-[100000]"
@@ -135,20 +155,6 @@ export function MenuOverlay({ isOpen, onClose, onNavClick }: MenuOverlayProps) {
               <p className="text-white/60 text-sm">Get in touch</p>
               <p className="text-accent-lime text-lg font-semibold">inside.compiler@gmail.com</p>
             </motion.div>
-
-            {/* Close button */}
-            <motion.button
-              onClick={onClose}
-              data-menu-close
-              className="absolute top-8 right-8 w-12 h-12 flex items-center justify-center text-white hover:text-accent-cyan transition-colors duration-200 bg-white/5 backdrop-blur-sm rounded-full border border-white/10 z-[100002] pointer-events-auto"
-              style={{ zIndex: 100002 }}
-              whileHover={{ rotate: 90, scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </motion.button>
           </div>
         </motion.div>
       )}

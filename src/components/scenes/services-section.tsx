@@ -243,17 +243,19 @@ export default function ServicesSection() {
       id="services"
       ref={sectionRef}
       className="min-h-screen w-full relative overflow-hidden"
-      style={{ background: '#0a0a0a' }}
+      style={{ background: '#0a0a0a', contain: 'layout style paint' }}
     >
       {/* Galaxy Background */}
       <div style={{
-        position: 'absolute',
+        position: 'fixed',
         top: 0,
         left: 0,
         width: '100%',
         height: '100%',
-        zIndex: 1,
-        pointerEvents: 'none'
+        zIndex: -1,
+        pointerEvents: 'none',
+        willChange: 'transform',
+        transform: 'translateZ(0)'
       }}>
         <Galaxy
           mouseRepulsion={true}
@@ -270,7 +272,7 @@ export default function ServicesSection() {
         />
       </div>
 
-      <div className="h-screen w-full flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8" style={{ position: 'relative', zIndex: 10 }}>
+      <div className="h-screen w-full flex flex-col items-center justify-center px-4 sm:px-6 lg:px-8" style={{ position: 'relative', zIndex: 10, willChange: 'transform', transform: 'translateZ(0)' }}>
         <h2
           ref={titleRef}
           className="text-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-center mb-8 sm:mb-10 md:mb-12 z-20 px-4"

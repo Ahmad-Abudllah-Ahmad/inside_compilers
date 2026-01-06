@@ -44,7 +44,7 @@ export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [showRedLines, setShowRedLines] = useState(false);
   const [visibleSections, setVisibleSections] = useState<string[]>([]);
-  
+
   // StaggeredMenu items
   const menuItems = [
     { label: 'Services', ariaLabel: 'View our services', link: '#services' },
@@ -54,9 +54,9 @@ export function Header() {
   ];
 
   const socialItems = [
-    { label: 'GitHub', link: 'https://github.com' },
-    { label: 'LinkedIn', link: 'https://linkedin.com' },
-    { label: 'Twitter', link: 'https://twitter.com' }
+    { label: 'GitHub', link: 'https://github.com/Ahmad-Abudllah-Ahmad' },
+    { label: 'LinkedIn', link: 'https://www.linkedin.com/in/ahmad-abdullah-ahmad-756a783a1' },
+    { label: 'Instagram', link: 'https://instagram.com/aaahmad_the_dev' }
   ];
 
   useEffect(() => {
@@ -76,7 +76,7 @@ export function Header() {
       // Show navigation items once we scroll past the initial hero section
       let currentlyVisible: string[] = [];
       let shouldShowRedLines = false;
-      
+
       // Show all navigation items when user starts scrolling (past 100px from top)
       if (scrollY >= 100) {
         currentlyVisible = ['services', 'projects', 'about', 'faq', 'contact'];
@@ -145,8 +145,8 @@ export function Header() {
         ref={headerRef}
         className={clsx(
           'fixed top-0 left-0 right-0 z-40 transition-all duration-300 hidden md:block',
-          isScrolled 
-            ? 'bg-background/80 backdrop-blur-xl border-b border-surface' 
+          isScrolled
+            ? 'bg-background/80 backdrop-blur-xl border-b border-surface'
             : 'bg-transparent'
         )}
       >
@@ -197,7 +197,7 @@ export function Header() {
           onMenuClose={() => console.log('Mobile menu closed')}
         />
       </div>
-      
+
     </>
   );
 }

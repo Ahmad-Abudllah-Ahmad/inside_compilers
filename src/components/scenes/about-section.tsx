@@ -221,7 +221,7 @@ export default function AboutSection() {
         {/* Background Layer */}
         <div className="absolute inset-0 w-full h-full z-0 bg-black">
           {/* GradientBlinds - visible on all screens */}
-          <div className="block absolute inset-0 w-full h-full z-1 transform-gpu">
+          <div className="block absolute inset-0 w-full h-full z-1 transform-gpu" style={{ willChange: 'transform', transform: 'translateZ(0)' }}>
             <GradientBlinds
               gradientColors={GRADIENT_COLORS}
               angle={241}
