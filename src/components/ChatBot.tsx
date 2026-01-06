@@ -20,8 +20,7 @@ interface UserData {
   notes?: string;
 }
 
-const GROQ_API_KEY = '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';
-const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+// API key is now stored securely on server-side in /api/chat route
 
 const IC_ASSIST_PROMPT = `
 You are **IC Assist**, the official AI Assistant of Inside Compiler.
@@ -199,21 +198,18 @@ Timeline: ${userData.timeline || 'Not provided'}
 
 IMPORTANT: If name, email and phone are all collected, you can offer to send a detailed proposal. If any are missing, politely ask for them before sending proposal.`;
 
-      const response = await fetch(GROQ_API_URL, {
+      // Use server-side API route to keep API key secure
+      const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${GROQ_API_KEY}`,
         },
         body: JSON.stringify({
-          model: 'llama-3.3-70b-versatile',
           messages: [
-            { role: 'system', content: systemPrompt },
             ...conversationHistory,
             { role: 'user', content: userMessage }
           ],
-          temperature: 0.7,
-          max_tokens: 1024
+          systemPrompt
         })
       });
 
@@ -222,7 +218,7 @@ IMPORTANT: If name, email and phone are all collected, you can offer to send a d
       }
 
       const data = await response.json();
-      return data.choices[0]?.message?.content || 'I apologize, but I encountered an issue. Please try again.';
+      return data.content || 'I apologize, but I encountered an issue. Please try again.';
     } catch (error) {
       console.error('Error calling Groq API:', error);
       return 'I apologize, but I encountered a technical issue. Please try again or contact us directly at inside.compiler@gmail.com.';
