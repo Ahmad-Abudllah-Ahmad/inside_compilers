@@ -54,15 +54,26 @@ const GradientBlinds = ({
     const container = containerRef.current;
     if (!container) return;
 
-    // WebGL enabled on all devices (mobile performance handled by reduced DPR)
+    // Detect low-end device
+    const deviceMemory = navigator.deviceMemory ?? 8;
+    const cores = navigator.hardwareConcurrency ?? 4;
+    const isLowEnd = deviceMemory < 4 || cores < 4;
+    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+      || window.innerWidth < 768;
+
+    // Calculate optimal DPR based on device capabilities
+    let optimalDPR = dpr ?? (window.devicePixelRatio || 1);
+    if (isLowEnd) optimalDPR = Math.min(optimalDPR, 1);
+    else if (isMobileDevice) optimalDPR = Math.min(optimalDPR, 1.5);
+    else optimalDPR = Math.min(optimalDPR, 2);
 
     const renderer = new Renderer({
-      dpr: dpr ?? (typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 1.5) : 1),
-      alpha: true, // Revert to true to ensure blend modes work correctly
+      dpr: optimalDPR,
+      alpha: true,
       depth: false,
       stencil: false,
       antialias: false,
-      powerPreference: 'high-performance'
+      powerPreference: isLowEnd ? 'low-power' : 'high-performance'
     });
     rendererRef.current = renderer;
     const gl = renderer.gl;

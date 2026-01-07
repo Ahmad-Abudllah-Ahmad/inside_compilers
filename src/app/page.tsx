@@ -8,9 +8,11 @@ import AboutSection from '@/components/scenes/about-section';
 import ContactSection from '@/components/scenes/contact-section';
 import InteractiveFooter from '@/components/scenes/interactive-footer';
 import Silk from '@/components/ui/Silk';
+import { useDeviceCapabilities } from '@/lib/performance';
 
 export default function Home() {
   const [isMobile, setIsMobile] = useState(false);
+  const capabilities = useDeviceCapabilities();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -20,11 +22,13 @@ export default function Home() {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+  // Determine if heavy effects should be disabled
+  const disableHeavyEffects = isMobile || capabilities.isLowEndDevice || capabilities.shouldDisableWebGL;
 
   return (
     <div className="scroll-smooth">
-      {/* Silk Background - ONLY on desktop to preserve WebGL contexts for Projects sphere on mobile */}
-      {!isMobile && (
+      {/* Silk Background - ONLY on capable desktop devices */}
+      {!disableHeavyEffects && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -38,17 +42,17 @@ export default function Home() {
           transform: 'translateZ(0)'
         }}>
           <Silk
-            speed={3}
+            speed={capabilities.shouldReduceAnimations ? 1 : 3}
             scale={0.7}
             color="#7B7481"
-            noiseIntensity={2}
+            noiseIntensity={capabilities.shouldReduceAnimations ? 1 : 2}
             rotation={0}
           />
         </div>
       )}
 
-      {/* Simple gradient fallback for mobile */}
-      {isMobile && (
+      {/* Simple gradient fallback for mobile and low-end devices */}
+      {disableHeavyEffects && (
         <div style={{
           position: 'fixed',
           top: 0,

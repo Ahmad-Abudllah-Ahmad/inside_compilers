@@ -424,15 +424,28 @@ const GridScanBase = ({
         const container = containerRef.current;
         if (!container) return;
 
+        // Detect low-end device
+        const deviceMemory = navigator.deviceMemory ?? 8;
+        const cores = navigator.hardwareConcurrency ?? 4;
+        const isLowEnd = deviceMemory < 4 || cores < 4;
+        const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+            || window.innerWidth < 768;
+
+        // Calculate optimal DPR based on device capabilities
+        let optimalDPR = window.devicePixelRatio || 1;
+        if (isLowEnd) optimalDPR = Math.min(optimalDPR, 1);
+        else if (isMobileDevice) optimalDPR = Math.min(optimalDPR, 1.5);
+        else optimalDPR = Math.min(optimalDPR, 2);
+
         const renderer = new THREE.WebGLRenderer({
-            antialias: false, // Disable AA for performance
+            antialias: false,
             alpha: true,
-            powerPreference: 'high-performance',
+            powerPreference: isLowEnd ? 'low-power' : 'high-performance',
             depth: false,
             stencil: false
         });
         rendererRef.current = renderer;
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+        renderer.setPixelRatio(optimalDPR);
         renderer.setSize(container.clientWidth, container.clientHeight);
         renderer.outputColorSpace = THREE.SRGBColorSpace;
         renderer.toneMapping = THREE.NoToneMapping;
