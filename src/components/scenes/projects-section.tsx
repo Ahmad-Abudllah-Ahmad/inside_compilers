@@ -147,6 +147,66 @@ const projects: Project[] = [
     metrics: { projects: '10+', technologies: '15+', experience: '3+ years' },
     link: 'https://aaahmadthedev.vercel.app/'
   },
+  {
+    id: 'fourty1',
+    title: 'Fourty1 - E-Commerce',
+    category: 'E-commerce',
+    description: 'Modern e-commerce platform with sleek design, seamless checkout, and dynamic product management.',
+    image: 'https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?w=800&h=600&fit=crop&crop=center',
+    tags: ['Next.js', 'E-commerce', 'Tailwind'],
+    metrics: { sales: 'High', conversion: 'Increased', speed: 'Fast' },
+    link: 'https://fourty1.vercel.app/'
+  },
+  {
+    id: 'pharmacy-management-system',
+    title: 'Pharmacy Management System',
+    category: 'Web Development',
+    description: 'Comprehensive pharmacy management system with inventory tracking, billing, and patient records.',
+    image: 'https://images.unsplash.com/photo-1585435557343-3b092031a831?w=800&h=600&fit=crop&crop=center',
+    tags: ['React', 'Management', 'Healthcare'],
+    metrics: { operations: 'Streamlined', security: 'High', efficiency: 'Improved' },
+    link: 'https://pharamacy-management-system.vercel.app/'
+  },
+  {
+    id: 'umair-pos-gamma',
+    title: 'Umair POS System',
+    category: 'Web Development',
+    description: 'Efficient Point of Sale system for retail businesses featuring real-time inventory and sales analytics.',
+    image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&h=600&fit=crop&crop=center',
+    tags: ['POS', 'Analytics', 'Inventory'],
+    metrics: { transactions: 'Real-time', accuracy: '100%', speed: 'Fast' },
+    link: 'https://umair-pos-gamma.vercel.app/'
+  },
+  {
+    id: 'scrapper-chi-umber',
+    title: 'Advanced Web Scrapper',
+    category: 'Automation',
+    description: 'Advanced web scraping tool designed to extract data efficiently and parse it into readable formats.',
+    image: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&h=600&fit=crop&crop=center',
+    tags: ['Scraping', 'Data', 'Automation'],
+    metrics: { data: 'Large scale', speed: 'Efficient', reliability: 'High' },
+    link: 'https://scrapper-chi-umber.vercel.app/'
+  },
+  {
+    id: 'inter-ai-club-umt',
+    title: 'Inter AI Club UMT',
+    category: 'Web Development',
+    description: 'Official platform for the UMT AI Club, featuring event management, member registration, and AI resources.',
+    image: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&h=600&fit=crop&crop=center',
+    tags: ['Community', 'AI', 'Education'],
+    metrics: { members: 'Growing', events: 'Active', engagement: 'High' },
+    link: 'https://inter-ai-club-umt.vercel.app/'
+  },
+  {
+    id: 'mega-mall-nine',
+    title: 'Mega Mall E-Commerce',
+    category: 'E-commerce',
+    description: 'Large-scale e-commerce mall application with multi-vendor support and extensive product catalogs.',
+    image: 'https://images.unsplash.com/photo-1519567241046-7f570eee3ce6?w=800&h=600&fit=crop&crop=center',
+    tags: ['E-commerce', 'Multi-vendor', 'Scalable'],
+    metrics: { products: 'Extensive', vendors: 'Multiple', reach: 'Wide' },
+    link: 'https://mega-mall-nine.vercel.app/'
+  }
 ];
 
 export default function ProjectsSection() {

@@ -26,18 +26,6 @@ const contactMethods = [
     value: 'inside.compiler@gmail.com',
     href: 'mailto:inside.compiler@gmail.com',
   },
-  {
-    icon: '📱',
-    label: 'Phone',
-    value: '+92 307 9632007',
-    href: 'tel:+923079632007',
-  },
-  {
-    icon: '💬',
-    label: 'WhatsApp',
-    value: 'Chat with us',
-    href: 'https://wa.me/923079632007',
-  },
 ];
 
 export default function ContactSection() {
@@ -233,16 +221,6 @@ export default function ContactSection() {
                     </div>
                   </a>
                 ))}
-              </div>
-
-              {/* Office Hours */}
-              <div className="mt-6 sm:mt-8 p-4 sm:p-6 bg-surface/40 backdrop-blur-md rounded-xl border border-white/10">
-                <h4 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-accent-lime text-center lg:text-left">Office Hours</h4>
-                <div className="space-y-2 text-sm sm:text-base text-text-secondary text-center lg:text-left">
-                  <div>Monday - Friday: 9:00 AM - 6:00 PM (EST)</div>
-                  <div>Saturday: 10:00 AM - 2:00 PM (EST)</div>
-                  <div>Sunday: Closed</div>
-                </div>
               </div>
             </div>
 

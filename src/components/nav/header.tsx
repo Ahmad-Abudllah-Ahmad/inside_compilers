@@ -54,9 +54,7 @@ export function Header() {
   ];
 
   const socialItems = [
-    { label: 'GitHub', link: 'https://github.com/Ahmad-Abudllah-Ahmad' },
-    { label: 'LinkedIn', link: 'https://www.linkedin.com/in/ahmad-abdullah-ahmad-756a783a1' },
-    { label: 'Instagram', link: 'https://instagram.com/aaahmad_the_dev' }
+    { label: 'LinkedIn', link: 'https://www.linkedin.com/company/inside-compilers/' }
   ];
 
   useEffect(() => {

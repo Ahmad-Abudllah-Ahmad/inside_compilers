@@ -26,11 +26,13 @@ const IC_ASSIST_PROMPT = `
 You are **IC Assist**, the official AI Assistant of Inside Compiler.
 
 IDENTITY & PERSONALITY:
-- Professional consultant with polite, respectful, and engaging manner
+- Highly professional, strictly ethical, and exceptionally warm and greeting-full in every interaction. Start every conversation with a very polite and welcoming greeting.
+- Proactively but politely interact with the customer to ask for their name and all necessary details (email, phone, project needs) early in the conversation.
+- Professional consultant with a polite, respectful, and engaging manner
 - ALWAYS remember and use the user's name once provided (e.g., "Hi Ahmad!", "Great question, Ahmad!")
-- Use formal yet friendly tone with empathy
+- Use a formal, ethical, and friendly tone with empathy
 - Be persuasive but never pushy
-- Use professional accents like "Certainly", "Absolutely", "Of course"
+- Use professional language like "Certainly", "Absolutely", "Of course"
 - End answers positively ("We'd be glad to help you implement this")
 
 INSIDE COMPILER SERVICES (ONLY discuss these topics):
@@ -41,7 +43,7 @@ INSIDE COMPILER SERVICES (ONLY discuss these topics):
 
 COMPANY INFO:
 - Email: inside.compiler@gmail.com
-- Social: GitHub, LinkedIn, Instagram (@aaahmad_the_dev)
+- Social: LinkedIn (https://www.linkedin.com/company/inside-compilers/)
 - Theme: Black & White minimalistic professional design
 - Founded: 2023
 - Expertise: Cost-effective, scalable AI-powered solutions
@@ -88,6 +90,20 @@ GREETING BEHAVIOR:
 - After name: "Nice to meet you, [Name]! What project can I help you with?"
 - Keep greetings brief and warm
 `;
+
+const TypewriterText = ({ content }: { content: string }) => {
+  const [displayed, setDisplayed] = useState('');
+  useEffect(() => {
+    let i = 0;
+    const timer = setInterval(() => {
+      setDisplayed(content.slice(0, i));
+      i++;
+      if (i > content.length) clearInterval(timer);
+    }, 15);
+    return () => clearInterval(timer);
+  }, [content]);
+  return <div className="text-sm whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: displayed.replace(/\*\*(.*?)\*\*/g, '<strong class="text-cyan-300">$1</strong>') }} />;
+};
 
 export default function ChatBot() {
   const [isOpen, setIsOpen] = useState(false);
@@ -303,8 +319,8 @@ IMPORTANT: If name, email and phone are all collected, you can offer to send a d
           {/* Header */}
           <div className="bg-accent-cyan text-black p-4 flex justify-between items-center">
             <div>
-              <h3 className="font-bold text-lg">IC Assist</h3>
-              <p className="text-sm opacity-80">Inside Compiler AI Assistant</p>
+              <h3 className="font-bold text-lg text-white">IC Assist</h3>
+              <p className="text-sm opacity-80 text-black">Inside Compiler AI Assistant</p>
             </div>
             <button
               onClick={() => setIsOpen(false)}
@@ -316,7 +332,7 @@ IMPORTANT: If name, email and phone are all collected, you can offer to send a d
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-3 max-h-96">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden overscroll-none min-h-0 p-4 space-y-4" onWheel={(e) => e.stopPropagation()} onTouchMove={(e) => e.stopPropagation()}>
             {messages.map((message) => {
               // Check if this is a proposal message
               const isProposal = message.text.includes('Project:') && (message.text.includes('Budget:') || message.text.includes('Timeline:') || message.text.includes('Scope:'));
@@ -414,13 +430,17 @@ IMPORTANT: If name, email and phone are all collected, you can offer to send a d
                         : 'bg-gradient-to-br from-gray-800 to-gray-900 text-white border border-gray-700'
                         }`}
                     >
-                      <div
-                        className="text-sm whitespace-pre-wrap leading-relaxed"
-                        dangerouslySetInnerHTML={{
-                          __html: message.text
-                            .replace(/\*\*(.*?)\*\*/g, '<strong class="text-cyan-300">$1</strong>')
-                        }}
-                      />
+                      {message.isUser ? (
+                        <div
+                          className="text-sm whitespace-pre-wrap leading-relaxed"
+                          dangerouslySetInnerHTML={{
+                            __html: message.text
+                              .replace(/\*\*(.*?)\*\*/g, '<strong class="text-cyan-300">$1</strong>')
+                          }}
+                        />
+                      ) : (
+                        <TypewriterText content={message.text} />
+                      )}
                     </div>
                   )}
                 </div>
@@ -428,11 +448,11 @@ IMPORTANT: If name, email and phone are all collected, you can offer to send a d
             })}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-surface text-white p-3 rounded-lg">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-accent-cyan rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-accent-cyan rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-accent-cyan rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 text-white p-4 rounded-xl shadow-lg">
+                  <div className="flex space-x-2 items-center h-4">
+                    <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
+                    <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
                   </div>
                 </div>
               </div>
