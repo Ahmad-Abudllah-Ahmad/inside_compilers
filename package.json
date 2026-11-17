@@ -1,11 +1,11 @@
 {
   "name": "two26-studio",
   "version": "1.0.0",
-  "description": "Exact clone of Two26 Studio (https://two26.studio/) with all local assets and GSAP/Lenis/Lottie animations",
+  "description": "Inside Compilers agency website with GSAP and Lenis animations",
   "main": "server.js",
   "scripts": {
+    "build": "echo 'Static build ready'",
     "start": "node server.js",
     "dev": "node server.js"
   }
 }
-
